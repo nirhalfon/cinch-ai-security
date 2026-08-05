@@ -236,8 +236,14 @@ def load_protocol(name: str) -> str:
 def search_by_threat(query: str) -> list[dict[str, Any]]:
     """Search all checklists for controls that mitigate a given threat.
 
+    Matches against the item's ``threat``, ``control``, ``verification``,
+    ``category``, and ``sources`` text (case-insensitive substring), so a
+    query like ``"data poisoning"`` matches items that mention it in their
+    verification steps or source references even when the threat/control
+    fields use different wording.
+
     Args:
-        query: Search term to match against threat descriptions.
+        query: Search term to match (1-256 chars).
 
     Returns:
         List of matching checklist items with their source checklist.
@@ -258,9 +264,7 @@ def search_by_threat(query: str) -> list[dict[str, Any]]:
         for item_data in raw.get("checklist", []) or []:
             if not isinstance(item_data, dict):
                 continue
-            if pattern.search(item_data.get("threat", "")) or pattern.search(
-                item_data.get("control", "")
-            ):
+            if pattern.search(_item_haystack(item_data)):
                 results.append(
                     {
                         "checklist": path.stem,
@@ -268,3 +272,80 @@ def search_by_threat(query: str) -> list[dict[str, Any]]:
                     }
                 )
     return results
+
+
+# Cap each field's contribution to the search haystack so a pathologically long
+# field cannot dominate regex cost. 1000 chars is far above any real field.
+_HAYSTACK_FIELD_CAP = 1000
+
+
+def _normalize_control(text: str) -> str:
+    """Normalize a control string for cross-checklist dedup comparison.
+
+    Lowercases and collapses whitespace so the same control stated slightly
+    differently in two checklists (spacing, case) still matches. Comparison is
+    by control text, not by item ID — IDs differ across checklists (AC vs HE).
+    """
+    return " ".join(str(text).lower().split())
+
+
+def diff_checklists(name_a: str, name_b: str) -> dict[str, Any]:
+    """Return items present in checklist A but missing from B, and vice versa.
+
+    An item in A is "missing from B" when no item in B has a matching
+    normalized ``control`` text (lowercased, whitespace-collapsed). This is a
+    text-based dedup, not an ID-based one, because item IDs differ across
+    checklists (e.g. AC-003 vs HE-011). Useful for spotting coverage gaps and
+    duplicated controls as the catalog grows.
+
+    Args:
+        name_a: First checklist name.
+        name_b: Second checklist name.
+
+    Returns:
+        ``{"a_only": [...], "b_only": [...]}`` where each entry is the item dict
+        (with its source checklist name) that has no match in the other list.
+    """
+    a = load_checklist(name_a)
+    b = load_checklist(name_b)
+    b_controls = {_normalize_control(it.control) for it in b.items if it.control}
+    a_controls = {_normalize_control(it.control) for it in a.items if it.control}
+    a_only = [
+        {"checklist": a.name, **_item_to_dict(it)}
+        for it in a.items
+        if it.control and _normalize_control(it.control) not in b_controls
+    ]
+    b_only = [
+        {"checklist": b.name, **_item_to_dict(it)}
+        for it in b.items
+        if it.control and _normalize_control(it.control) not in a_controls
+    ]
+    return {"a_only": a_only, "b_only": b_only}
+
+
+def _item_to_dict(item: ChecklistItem) -> dict[str, Any]:
+    """Serialize a ChecklistItem to a plain dict for JSON output."""
+    return {
+        "id": item.id,
+        "category": item.category,
+        "threat": item.threat,
+        "control": item.control,
+        "severity": item.severity,
+        "verification": item.verification,
+        "sources": item.sources,
+        "custody_pillar": item.custody_pillar,
+        "lasm_layer": item.lasm_layer,
+    }
+
+
+def _item_haystack(item_data: dict[str, Any]) -> str:
+    """Build a bounded, lowercase search haystack from an item's text fields."""
+    parts: list[str] = []
+    for key in ("threat", "control", "verification", "category"):
+        val = item_data.get(key, "")
+        if isinstance(val, str):
+            parts.append(val[:_HAYSTACK_FIELD_CAP])
+    sources = item_data.get("sources", [])
+    if isinstance(sources, list):
+        parts.append(" ".join(str(s) for s in sources)[:_HAYSTACK_FIELD_CAP])
+    return " ".join(parts)

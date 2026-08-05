@@ -1,329 +1,269 @@
 # Red Team Checklist
 # Validates adversarial testing coverage for AI harness security
 
+
 metadata:
   id: red-team
-  name: "Red Team Checklist"
-  version: "1.0.0"
-  description: >
-    Validates adversarial testing coverage for AI harness security. Covers
-    prompt injection, tool abuse, data exfiltration, authorization bypass,
-    and resilience testing.
-  categories:
-    - id: prompt-injection
-      name: "Prompt Injection & Manipulation"
-      weight: 30
-    - id: tool-abuse
-      name: "Tool Abuse & Capability Exploitation"
-      weight: 25
-    - id: data-exfiltration
-      name: "Data Exfiltration & Privacy"
-      weight: 20
-    - id: auth-bypass
-      name: "Authorization Bypass & Privilege Escalation"
-      weight: 15
-    - id: resilience
-      name: "Resilience & Denial of Service"
-      weight: 10
+  name: Red Team Checklist
+  version: 1.0.0
+  description: 'Validates adversarial testing coverage for AI harness security. Covers prompt injection,
+    tool abuse, data exfiltration, authorization bypass, and resilience testing.
 
+    '
+  categories:
+  - id: prompt-injection
+    name: Prompt Injection & Manipulation
+    weight: 30
+  - id: tool-abuse
+    name: Tool Abuse & Capability Exploitation
+    weight: 25
+  - id: data-exfiltration
+    name: Data Exfiltration & Privacy
+    weight: 20
+  - id: auth-bypass
+    name: Authorization Bypass & Privilege Escalation
+    weight: 15
+  - id: resilience
+    name: Resilience & Denial of Service
+    weight: 10
 checklist:
-  # ── Prompt Injection & Manipulation ────────────────────────────────
+
+  # ── Prompt Injection & Manipulation ──────────────────────────────────────
+
   - id: RT-001
     category: prompt-injection
+    threat: Direct prompt injection attacks tested and mitigated
+    control: Test that user inputs cannot override or bypass system instructions. Include prefix injection,
+      role override, instruction hijacking, and context manipulation attacks. All must be blocked.
     severity: critical
-    title: "Direct prompt injection attacks tested and mitigated"
-    description: >
-      Test that user inputs cannot override or bypass system instructions.
-      Include prefix injection, role override, instruction hijacking, and
-      context manipulation attacks. All must be blocked.
-    validation:
-      type: hybrid
-      evidence_required: "Red team test report with attack payloads and defense results"
-    references:
-      - "OWASP LLM Top 10 — LLM01 Prompt Injection"
-      - "NIST AI 100-2e2023 — Adversarial Machine Learning"
+    verification: 'hybrid — evidence required: Red team test report with attack payloads and defense results'
+    sources:
+    - OWASP LLM Top 10 — LLM01 Prompt Injection
+    - NIST AI 100-2e2023 — Adversarial Machine Learning
 
   - id: RT-002
     category: prompt-injection
+    threat: Indirect prompt injection via data channels tested
+    control: Test that data fetched by the agent (web pages, file contents, API responses) cannot contain
+      embedded instructions that the agent follows. Injected commands in markdown, HTML, JSON, and PDF must
+      be neutralized.
     severity: critical
-    title: "Indirect prompt injection via data channels tested"
-    description: >
-      Test that data fetched by the agent (web pages, file contents, API
-      responses) cannot contain embedded instructions that the agent follows.
-      Injected commands in markdown, HTML, JSON, and PDF must be neutralized.
-    validation:
-      type: hybrid
-      evidence_required: "Indirect injection test report with data-borne payloads and results"
-    references:
-      - "OWASP LLM Top 10 — LLM01 Prompt Injection"
-      - "Data-driven prompt injection research"
+    verification: 'hybrid — evidence required: Indirect injection test report with data-borne payloads and
+      results'
+    sources:
+    - OWASP LLM Top 10 — LLM01 Prompt Injection
+    - Data-driven prompt injection research
 
   - id: RT-003
     category: prompt-injection
+    threat: Multi-turn and context accumulation attacks tested
+    control: Test that adversarial instructions cannot be built up over multiple turns or spread across context
+      windows. The agent must not follow instructions assembled from fragments.
     severity: high
-    title: "Multi-turn and context accumulation attacks tested"
-    description: >
-      Test that adversarial instructions cannot be built up over multiple
-      turns or spread across context windows. The agent must not follow
-      instructions assembled from fragments.
-    validation:
-      type: manual_review
-      evidence_required: "Multi-turn attack scenario report"
-    references:
-      - "OWASP LLM Top 10 — LLM01 Prompt Injection"
+    verification: 'manual_review — evidence required: Multi-turn attack scenario report'
+    sources:
+    - OWASP LLM Top 10 — LLM01 Prompt Injection
 
   - id: RT-004
     category: prompt-injection
+    threat: Jailbreak and role-play escape attempts tested
+    control: Test that the agent does not comply with jailbreak attempts including DAN mode, developer mode,
+      hypothetical scenarios, or role-play that circumvents safety constraints.
     severity: high
-    title: "Jailbreak and role-play escape attempts tested"
-    description: >
-      Test that the agent does not comply with jailbreak attempts including
-      DAN mode, developer mode, hypothetical scenarios, or role-play that
-      circumvents safety constraints.
-    validation:
-      type: hybrid
-      evidence_required: "Jailbreak test report with evasion attempts and results"
-    references:
-      - "OWASP LLM Top 10 — LLM01 Prompt Injection"
-      - "NIST AI RMF — MAP 2.3"
+    verification: 'hybrid — evidence required: Jailbreak test report with evasion attempts and results'
+    sources:
+    - OWASP LLM Top 10 — LLM01 Prompt Injection
+    - NIST AI RMF — MAP 2.3
 
-  # ── Tool Abuse & Capability Exploitation ────────────────────────────
+
+  # ── Tool Abuse & Capability Exploitation ──────────────────────────────────────
+
   - id: RT-005
     category: tool-abuse
+    threat: Agent cannot access or invoke unauthorized tools
+    control: Red team must verify that the agent cannot discover, enumerate, or invoke tools that are not
+      on its allow-list. Tool discovery through error messages, documentation access, or probing must fail.
     severity: critical
-    title: "Agent cannot access or invoke unauthorized tools"
-    description: >
-      Red team must verify that the agent cannot discover, enumerate, or
-      invoke tools that are not on its allow-list. Tool discovery through
-      error messages, documentation access, or probing must fail.
-    validation:
-      type: hybrid
-      evidence_required: "Tool enumeration test report and allow-list enforcement logs"
-    references:
-      - "OWASP LLM Top 10 — LLM06 Excessive Agency"
-      - "NIST SP 800-53 — AC-3 Access Enforcement"
+    verification: 'hybrid — evidence required: Tool enumeration test report and allow-list enforcement logs'
+    sources:
+    - OWASP LLM Top 10 — LLM06 Excessive Agency
+    - NIST SP 800-53 — AC-3 Access Enforcement
 
   - id: RT-006
     category: tool-abuse
-    severity: critical
-    title: "Tool parameter manipulation attacks tested"
-    description: >
-      Test that the agent cannot modify tool parameters to escalate
-      privileges, inject commands, or bypass constraints. Path traversal,
-      command injection, and type confusion in tool parameters must be
+    threat: Tool parameter manipulation attacks tested
+    control: Test that the agent cannot modify tool parameters to escalate privileges, inject commands, or
+      bypass constraints. Path traversal, command injection, and type confusion in tool parameters must be
       blocked.
-    validation:
-      type: hybrid
-      evidence_required: "Tool parameter manipulation test report"
-    references:
-      - "OWASP LLM Top 10 — LLM06 Excessive Agency"
-      - "OWASP API Security Top 10 — API8 Security Misconfiguration"
+    severity: critical
+    verification: 'hybrid — evidence required: Tool parameter manipulation test report'
+    sources:
+    - OWASP LLM Top 10 — LLM06 Excessive Agency
+    - OWASP API Security Top 10 — API8 Security Misconfiguration
 
   - id: RT-007
     category: tool-abuse
+    threat: Tool chaining attacks to achieve unauthorized goals tested
+    control: Test that the agent cannot chain multiple permitted tools to achieve an unauthorized outcome.
+      For example, combining file read and file write to escalate privileges or exfiltrate data.
     severity: high
-    title: "Tool chaining attacks to achieve unauthorized goals tested"
-    description: >
-      Test that the agent cannot chain multiple permitted tools to achieve
-      an unauthorized outcome. For example, combining file read and file
-      write to escalate privileges or exfiltrate data.
-    validation:
-      type: manual_review
-      evidence_required: "Tool chaining attack scenario report"
-    references:
-      - "OWASP LLM Top 10 — LLM06 Excessive Agency"
-      - "NIST AI RMF — MEASURE 2.6"
+    verification: 'manual_review — evidence required: Tool chaining attack scenario report'
+    sources:
+    - OWASP LLM Top 10 — LLM06 Excessive Agency
+    - NIST AI RMF — MEASURE 2.6
 
   - id: RT-008
     category: tool-abuse
+    threat: Resource exhaustion through tool invocation tested
+    control: Test that the agent cannot exhaust system resources by invoking tools in loops, requesting large
+      outputs, or creating excessive side effects. Rate limits and budgets must hold.
     severity: high
-    title: "Resource exhaustion through tool invocation tested"
-    description: >
-      Test that the agent cannot exhaust system resources by invoking tools
-      in loops, requesting large outputs, or creating excessive side effects.
-      Rate limits and budgets must hold.
-    validation:
-      type: automated
-      evidence_required: "Resource exhaustion test results and rate limit verification"
-    references:
-      - "OWASP LLM Top 10 — LLM10 Unbounded Consumption"
-      - "NIST SP 800-53 — SC-5 Denial of Service Protection"
+    verification: 'automated — evidence required: Resource exhaustion test results and rate limit verification'
+    sources:
+    - OWASP LLM Top 10 — LLM10 Unbounded Consumption
+    - NIST SP 800-53 — SC-5 Denial of Service Protection
 
-  # ── Data Exfiltration & Privacy ─────────────────────────────────────
+
+  # ── Data Exfiltration & Privacy ──────────────────────────────────────
+
   - id: RT-009
     category: data-exfiltration
+    threat: Prompt and system instruction leakage tested
+    control: Test that the agent cannot be tricked into revealing its system prompt, instructions, or internal
+      configuration through direct requests, encoding tricks, or translation attacks.
     severity: critical
-    title: "Prompt and system instruction leakage tested"
-    description: >
-      Test that the agent cannot be tricked into revealing its system
-      prompt, instructions, or internal configuration through direct
-      requests, encoding tricks, or translation attacks.
-    validation:
-      type: hybrid
-      evidence_required: "Prompt leakage test report with extraction attempts and results"
-    references:
-      - "OWASP LLM Top 10 — LLM06 Excessive Agency"
-      - "NIST AI RMF — MAP 2.3"
+    verification: 'hybrid — evidence required: Prompt leakage test report with extraction attempts and results'
+    sources:
+    - OWASP LLM Top 10 — LLM06 Excessive Agency
+    - NIST AI RMF — MAP 2.3
 
   - id: RT-010
     category: data-exfiltration
+    threat: Training data extraction attacks tested
+    control: Test that the agent cannot be induced to regurgitate training data, PII, or proprietary information
+      through completion attacks, few-shot extraction, or targeted prompts.
     severity: critical
-    title: "Training data extraction attacks tested"
-    description: >
-      Test that the agent cannot be induced to regurgitate training data,
-      PII, or proprietary information through completion attacks, few-shot
-      extraction, or targeted prompts.
-    validation:
-      type: hybrid
-      evidence_required: "Training data extraction test report"
-    references:
-      - "OWASP LLM Top 10 — LLM10 Unbounded Consumption"
-      - "NIST AI 100-2e2023 — Training Data Extraction"
+    verification: 'hybrid — evidence required: Training data extraction test report'
+    sources:
+    - OWASP LLM Top 10 — LLM10 Unbounded Consumption
+    - NIST AI 100-2e2023 — Training Data Extraction
 
   - id: RT-011
     category: data-exfiltration
+    threat: Data exfiltration via covert channels tested
+    control: Test that the agent cannot exfiltrate data through covert channels such as DNS lookups, timing
+      side channels, steganography in outputs, or URL construction with encoded data.
     severity: high
-    title: "Data exfiltration via covert channels tested"
-    description: >
-      Test that the agent cannot exfiltrate data through covert channels
-      such as DNS lookups, timing side channels, steganography in outputs,
-      or URL construction with encoded data.
-    validation:
-      type: manual_review
-      evidence_required: "Covert channel test report and monitoring verification"
-    references:
-      - "NIST SP 800-53 — SC-7 Boundary Protection"
-      - "OWASP LLM Top 10 — LLM02 Insecure Output Handling"
+    verification: 'manual_review — evidence required: Covert channel test report and monitoring verification'
+    sources:
+    - NIST SP 800-53 — SC-7 Boundary Protection
+    - OWASP LLM Top 10 — LLM02 Insecure Output Handling
 
   - id: RT-012
     category: data-exfiltration
+    threat: Cross-session data contamination tested
+    control: Test that data from one user session cannot leak into another user session. Context isolation
+      between sessions, users, and tenants must be verified.
     severity: high
-    title: "Cross-session data contamination tested"
-    description: >
-      Test that data from one user session cannot leak into another user
-      session. Context isolation between sessions, users, and tenants must
-      be verified.
-    validation:
-      type: automated
-      evidence_required: "Cross-session isolation test results"
-    references:
-      - "OWASP Top 10 — A01 Broken Access Control"
-      - "NIST SP 800-53 — AC-4 Information Flow Enforcement"
+    verification: 'automated — evidence required: Cross-session isolation test results'
+    sources:
+    - OWASP Top 10 — A01 Broken Access Control
+    - NIST SP 800-53 — AC-4 Information Flow Enforcement
 
-  # ── Authorization Bypass & Privilege Escalation ─────────────────────
+
+  # ── Authorization Bypass & Privilege Escalation ──────────────────────────────────────
+
   - id: RT-013
     category: auth-bypass
+    threat: Horizontal privilege escalation between users tested
+    control: Test that one user cannot access or modify another user's agents, sessions, data, or configurations.
+      Tenant isolation must be verified.
     severity: critical
-    title: "Horizontal privilege escalation between users tested"
-    description: >
-      Test that one user cannot access or modify another user's agents,
-      sessions, data, or configurations. Tenant isolation must be verified.
-    validation:
-      type: automated
-      evidence_required: "Horizontal escalation test report"
-    references:
-      - "OWASP Top 10 — A01 Broken Access Control"
-      - "NIST SP 800-53 — AC-4 Information Flow Enforcement"
+    verification: 'automated — evidence required: Horizontal escalation test report'
+    sources:
+    - OWASP Top 10 — A01 Broken Access Control
+    - NIST SP 800-53 — AC-4 Information Flow Enforcement
 
   - id: RT-014
     category: auth-bypass
+    threat: Vertical privilege escalation to admin tested
+    control: Test that a standard user cannot escalate to administrator privileges through the harness API,
+      agent actions, or configuration manipulation.
     severity: critical
-    title: "Vertical privilege escalation to admin tested"
-    description: >
-      Test that a standard user cannot escalate to administrator privileges
-      through the harness API, agent actions, or configuration manipulation.
-    validation:
-      type: hybrid
-      evidence_required: "Vertical escalation test report"
-    references:
-      - "OWASP Top 10 — A01 Broken Access Control"
-      - "NIST SP 800-53 — AC-6 Least Privilege"
+    verification: 'hybrid — evidence required: Vertical escalation test report'
+    sources:
+    - OWASP Top 10 — A01 Broken Access Control
+    - NIST SP 800-53 — AC-6 Least Privilege
 
   - id: RT-015
     category: auth-bypass
+    threat: API authentication bypass attempts tested
+    control: Test all harness API endpoints for authentication bypass including missing auth, token tampering,
+      JWT manipulation, and session fixation.
     severity: high
-    title: "API authentication bypass attempts tested"
-    description: >
-      Test all harness API endpoints for authentication bypass including
-      missing auth, token tampering, JWT manipulation, and session fixation.
-    validation:
-      type: automated
-      evidence_required: "API authentication bypass test results"
-    references:
-      - "OWASP API Security Top 10 — API2 Broken Authentication"
-      - "OWASP ASVS — V2 Authentication"
+    verification: 'automated — evidence required: API authentication bypass test results'
+    sources:
+    - OWASP API Security Top 10 — API2 Broken Authentication
+    - OWASP ASVS — V2 Authentication
 
   - id: RT-016
     category: auth-bypass
+    threat: IDOR and object-level authorization bypass tested
+    control: Test for insecure direct object references where an agent or user can access resources belonging
+      to another agent or user by changing identifiers in requests.
     severity: high
-    title: "IDOR and object-level authorization bypass tested"
-    description: >
-      Test for insecure direct object references where an agent or user can
-      access resources belonging to another agent or user by changing
-      identifiers in requests.
-    validation:
-      type: automated
-      evidence_required: "IDOR test report and authorization boundary verification"
-    references:
-      - "OWASP API Security Top 10 — API1 Broken Object-Level Authorization"
-      - "OWASP ASVS — V4 Access Control"
+    verification: 'automated — evidence required: IDOR test report and authorization boundary verification'
+    sources:
+    - OWASP API Security Top 10 — API1 Broken Object-Level Authorization
+    - OWASP ASVS — V4 Access Control
 
-  # ── Resilience & Denial of Service ─────────────────────────────────
+
+  # ── Resilience & Denial of Service ──────────────────────────────────────
+
   - id: RT-017
     category: resilience
+    threat: Load and stress testing validates rate limit effectiveness
+    control: Red team must perform load testing to verify that rate limits, token budgets, and timeout controls
+      hold under sustained and burst traffic.
     severity: high
-    title: "Load and stress testing validates rate limit effectiveness"
-    description: >
-      Red team must perform load testing to verify that rate limits, token
-      budgets, and timeout controls hold under sustained and burst traffic.
-    validation:
-      type: automated
-      evidence_required: "Load test report with rate limit effectiveness metrics"
-    references:
-      - "OWASP LLM Top 10 — LLM10 Unbounded Consumption"
-      - "NIST SP 800-53 — SC-5 Denial of Service Protection"
+    verification: 'automated — evidence required: Load test report with rate limit effectiveness metrics'
+    sources:
+    - OWASP LLM Top 10 — LLM10 Unbounded Consumption
+    - NIST SP 800-53 — SC-5 Denial of Service Protection
 
   - id: RT-018
     category: resilience
+    threat: Graceful degradation under partial failure tested
+    control: Test that the harness degrades gracefully when dependencies (LLM API, database, tool services)
+      fail. No data corruption, no cascading failures, and clear error reporting to users.
     severity: high
-    title: "Graceful degradation under partial failure tested"
-    description: >
-      Test that the harness degrades gracefully when dependencies (LLM API,
-      database, tool services) fail. No data corruption, no cascading
-      failures, and clear error reporting to users.
-    validation:
-      type: manual_review
-      evidence_required: "Failure injection test report and degradation behavior documentation"
-    references:
-      - "NIST SP 800-53 — CP-10 System Recovery"
-      - "OWASP ASVS — V11 Error Handling"
+    verification: 'manual_review — evidence required: Failure injection test report and degradation behavior
+      documentation'
+    sources:
+    - NIST SP 800-53 — CP-10 System Recovery
+    - OWASP ASVS — V11 Error Handling
 
   - id: RT-019
     category: resilience
+    threat: Adversarial input robustness tested across edge cases
+    control: 'Test that the harness handles adversarial inputs gracefully: extremely long inputs, Unicode
+      exploits, null bytes, format strings, and encoding attacks. No crashes or undefined behavior.'
     severity: medium
-    title: "Adversarial input robustness tested across edge cases"
-    description: >
-      Test that the harness handles adversarial inputs gracefully: extremely
-      long inputs, Unicode exploits, null bytes, format strings, and
-      encoding attacks. No crashes or undefined behavior.
-    validation:
-      type: automated
-      evidence_required: "Fuzzing test report with edge case results"
-    references:
-      - "OWASP ASVS — V11 Error Handling"
-      - "NIST AI 100-2e2023 — Robustness Testing"
+    verification: 'automated — evidence required: Fuzzing test report with edge case results'
+    sources:
+    - OWASP ASVS — V11 Error Handling
+    - NIST AI 100-2e2023 — Robustness Testing
 
   - id: RT-020
     category: resilience
+    threat: Red team findings are tracked to remediation with SLAs
+    control: Every red team finding must be tracked in a vulnerability management system with severity-based
+      SLAs. Critical findings must be remediated within 7 days, high within 30 days, and medium within 90
+      days.
     severity: medium
-    title: "Red team findings are tracked to remediation with SLAs"
-    description: >
-      Every red team finding must be tracked in a vulnerability management
-      system with severity-based SLAs. Critical findings must be remediated
-      within 7 days, high within 30 days, and medium within 90 days.
-    validation:
-      type: manual_review
-      evidence_required: "Vulnerability tracking system export and SLA compliance report"
-    references:
-      - "NIST SP 800-53 — RA-5 Vulnerability Scanning"
-      - "NIST SP 800-53 — SI-2 Flaw Remediation"
+    verification: 'manual_review — evidence required: Vulnerability tracking system export and SLA compliance
+      report'
+    sources:
+    - NIST SP 800-53 — RA-5 Vulnerability Scanning
+    - NIST SP 800-53 — SI-2 Flaw Remediation
+

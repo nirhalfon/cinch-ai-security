@@ -14,6 +14,7 @@ import sys
 from mcp.server.mcpserver.server import MCPServer
 
 from .loader import (
+    diff_checklists,
     get_checklist_item,
     list_checklists,
     load_checklist,
@@ -232,6 +233,29 @@ def threat_search(query: str) -> str:
         return _err(str(e))
 
 
+def checklist_diff(a: str, b: str) -> str:
+    """Compare two checklists and show coverage gaps and duplicated controls.
+
+    Returns items present in checklist A but missing from B, and vice versa.
+    Matching is by normalized control text (case- and whitespace-insensitive),
+    not by item ID, so the same control stated in two checklists (e.g.
+    agent-containment and harness-engineering) is recognized as a duplicate.
+    Use this to keep the catalog maintainable as it grows.
+
+    Args:
+        a: First checklist name, e.g. 'agent-containment'.
+        b: Second checklist name, e.g. 'harness-engineering'.
+    """
+    _setup_logging()
+    _log_call("checklist_diff", {"a": a, "b": b})
+    try:
+        _validate_str(a, "a")
+        _validate_str(b, "b")
+        return json.dumps(diff_checklists(a, b), indent=2)
+    except (FileNotFoundError, ValueError, TypeError) as e:
+        return _err(str(e))
+
+
 # ── Register tools with the MCP server ──
 APP.add_tool(checklist_list, name="checklist_list")
 APP.add_tool(checklist_run, name="checklist_run")
@@ -239,6 +263,7 @@ APP.add_tool(checklist_get, name="checklist_get")
 APP.add_tool(protocol_get, name="protocol_get")
 APP.add_tool(mapping_lookup, name="mapping_lookup")
 APP.add_tool(threat_search, name="threat_search")
+APP.add_tool(checklist_diff, name="checklist_diff")
 
 
 def serve() -> None:

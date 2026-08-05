@@ -382,375 +382,507 @@
         "version": "1.0.0"
       }
     },
+    "agent-environment": {
+      "items": [
+        {
+          "category": "identity",
+          "control": "Agent runs as a dedicated non-root UID/GID with no-new-privileges set (NO_NEW_PRIVS) so setuid binaries and capabilities cannot raise privileges",
+          "custody_pillar": "Operational Controls",
+          "id": "AE-001",
+          "lasm_layer": "L6 Environment",
+          "severity": "critical",
+          "sources": [
+            "NIST SP 800-53 — AC-6 Least Privilege",
+            "systemd ProtectSystem=no_new_privs",
+            "CUSTODY Operational Controls"
+          ],
+          "threat": "Privilege escalation: agent or a sub-process gains root or escalates privileges at runtime",
+          "verification": "Process runs as a non-root UID; NO_NEW_PRIVS is set on the agent unit/container; getcap shows no file capabilities that bypass it"
+        },
+        {
+          "category": "identity",
+          "control": "Linux capability bounding set is reduced to the minimum required (drop CAP_SYS_ADMIN, CAP_NET_ADMIN, CAP_DAC_OVERRIDE, etc.) and the effective/permitted sets match",
+          "custody_pillar": "Operational Controls",
+          "id": "AE-002",
+          "lasm_layer": "L6 Environment",
+          "severity": "high",
+          "sources": [
+            "Linux capabilities(7)",
+            "NIST SP 800-53 — AC-3 Access Enforcement"
+          ],
+          "threat": "Capability abuse: agent holds Linux capabilities broader than its task requires",
+          "verification": "/proc/self/status CapBnd and CapEff show only the required capabilities; capabilities not needed are absent from all four sets"
+        },
+        {
+          "category": "mac",
+          "control": "A mandatory access control profile (AppArmor, SELinux, or seccomp) confines the agent process to permitted paths and syscalls; profile is enforced, not permissive",
+          "custody_pillar": "Operational Controls",
+          "id": "AE-003",
+          "lasm_layer": "L6 Environment",
+          "severity": "critical",
+          "sources": [
+            "AppArmor / SELinux documentation",
+            "NIST SP 800-53 — SC-3 Security Function Isolation"
+          ],
+          "threat": "Escape from intended context: agent writes outside its working directory or executes unexpected binaries",
+          "verification": "aa-status shows the AppArmor profile is loaded and enforcing (or SELinux mode is Enforcing); the agent process label is confined; audit denies appear on out-of-profile access"
+        },
+        {
+          "category": "mac",
+          "control": "A seccomp-bpf allowlist filters syscalls to the subset the agent needs; dangerous syscalls (keyctl, bpf, userfaultfd, perf_event_open) are blocked",
+          "custody_pillar": "Operational Controls",
+          "id": "AE-004",
+          "lasm_layer": "L6 Environment",
+          "severity": "high",
+          "sources": [
+            "seccomp(2) / OCI seccomp profile",
+            "CUSTODY Operational Controls"
+          ],
+          "threat": "Syscall abuse: agent invokes syscalls outside its expected surface (kernel exploit, namespace escape)",
+          "verification": "Seccomp filter is attached to the agent process (mode 2 filter); blocked syscalls return EPERM and are logged"
+        },
+        {
+          "category": "network",
+          "control": "Egress is default-deny at the network boundary; the agent may reach only an allowlisted proxy/gateway; direct outbound is blocked",
+          "custody_pillar": "Operational Controls",
+          "id": "AE-005",
+          "lasm_layer": "L6 Environment",
+          "severity": "critical",
+          "sources": [
+            "NIST SP 800-53 — SC-7 Boundary Protection",
+            "CUSTODY Operational Controls"
+          ],
+          "threat": "Data exfiltration: agent sends data to unauthorized endpoints or pivots to internal hosts",
+          "verification": "iptables/nftables OUTPUT policy is DROP with an explicit allowlist; a connection to a non-allowlisted host fails; egress passes through the gateway"
+        },
+        {
+          "category": "network",
+          "control": "Agent workload is network-isolated in its own namespace; metadata service endpoints are blocked; per-service mTLS authorization is required for any east-west traffic",
+          "custody_pillar": "Operational Controls",
+          "id": "AE-006",
+          "lasm_layer": "L6 Environment",
+          "severity": "high",
+          "sources": [
+            "Kubernetes NetworkPolicy",
+            "NIST SP 800-53 — SC-7 Boundary Protection"
+          ],
+          "threat": "Lateral movement: agent reaches other services or the metadata API on the host network",
+          "verification": "Network namespace is separate; cloud metadata endpoint (169.254.169.254) is unreachable; east-west traffic requires mTLS"
+        },
+        {
+          "category": "logging",
+          "control": "Agent actions and control denials are logged to an append-only, external destination; logs carry trace IDs, timestamps, and the confined identity",
+          "custody_pillar": "Traceability",
+          "id": "AE-007",
+          "lasm_layer": "L6 Environment",
+          "severity": "high",
+          "sources": [
+            "NIST SP 800-53 — AU-2 Audit Events, AU-10 Non-repudiation",
+            "CUSTODY Traceability"
+          ],
+          "threat": "Repudiation or blind spots: agent actions occur without a tamper-evident record",
+          "verification": "Audit log destination is external and append-only; seccomp/AppArmor denies are logged; logs cannot be written or deleted by the agent UID"
+        },
+        {
+          "category": "secrets",
+          "control": "Secrets are brokered just-in-time with short TTLs and scoped scope; no static credentials in env, files, or image; brokered tokens are revocable",
+          "custody_pillar": "Operational Controls",
+          "id": "AE-008",
+          "lasm_layer": "L6 Environment",
+          "severity": "critical",
+          "sources": [
+            "HashiCorp Vault / cloud secret managers",
+            "NIST SP 800-53 — IA-5 Authenticator Management"
+          ],
+          "threat": "Credential theft or reuse: long-lived secrets are materialized where the agent can read or exfiltrate them",
+          "verification": "Secrets come from a broker/vault with TTL; no secrets in env vars or filesystem; brokered credentials are revoked on task completion"
+        },
+        {
+          "category": "provenance",
+          "control": "Agent image is immutable and signed; signature is verified before launch; an SBOM/AIBOM is attached and the running image matches the signed digest",
+          "custody_pillar": "Dependency",
+          "id": "AE-009",
+          "lasm_layer": "L1 Foundation",
+          "severity": "high",
+          "sources": [
+            "in-toto / SLSA provenance",
+            "NIST SP 800-53 — SI-3 Malware Protection"
+          ],
+          "threat": "Tampered runtime: agent runs from an image or artifacts that were modified or built from untrusted sources",
+          "verification": "Image signature verifies against a trusted key; the running digest matches the signed digest; SBOM is present and matches installed packages"
+        },
+        {
+          "category": "filesystem",
+          "control": "System paths are read-only; the agent writable directory is tmpfs/ephemeral and discarded after the task; no state persists across runs",
+          "custody_pillar": "Yield",
+          "id": "AE-010",
+          "lasm_layer": "L6 Environment",
+          "severity": "high",
+          "sources": [
+            "CUSTODY Yield",
+            "NIST SP 800-53 — SC-5 Denial of Service Protection"
+          ],
+          "threat": "Persistent tampering: agent writes changes that survive across tasks and alter future behavior",
+          "verification": "Root filesystem is mounted read-only; only the working dir is writable and is tmpfs; state is gone after task completion"
+        },
+        {
+          "category": "runtime",
+          "control": "Resource limits (CPU, memory, file descriptors, processes, wall-clock) are enforced by the container runtime or cgroups; a hard execution timeout terminates runaway sessions",
+          "custody_pillar": "Operational Controls",
+          "id": "AE-011",
+          "lasm_layer": "L6 Environment",
+          "severity": "high",
+          "sources": [
+            "systemd / cgroups resource limits",
+            "NIST SP 800-53 — SC-5 Denial of Service Protection"
+          ],
+          "threat": "Resource exhaustion: agent loops, forks, or allocates without bound and starves the host",
+          "verification": "cgroup limits are set for CPU/memory/pids/fd; a runaway loop is killed by the limit before host impact; execution timeout fires"
+        }
+      ],
+      "meta": {
+        "categories": [
+          {
+            "id": "identity",
+            "name": "Identity & Privilege",
+            "weight": 15
+          },
+          {
+            "id": "mac",
+            "name": "Mandatory Access Control",
+            "weight": 15
+          },
+          {
+            "id": "network",
+            "name": "Network & Egress",
+            "weight": 15
+          },
+          {
+            "id": "logging",
+            "name": "Audit Logging",
+            "weight": 10
+          },
+          {
+            "id": "secrets",
+            "name": "Secrets Delivery",
+            "weight": 10
+          },
+          {
+            "id": "provenance",
+            "name": "Image & Artifact Provenance",
+            "weight": 10
+          },
+          {
+            "id": "filesystem",
+            "name": "Filesystem State",
+            "weight": 10
+          },
+          {
+            "id": "runtime",
+            "name": "Runtime Hardening",
+            "weight": 15
+          }
+        ],
+        "description": "Enforceable controls for the host or container an AI agent executes on. Covers identity and privileges, mandatory access control, network egress, audit logging, secrets delivery, image provenance, filesystem state, capability bounding, syscall filtering, and resource limits. Core assumption: an AI agent can be manipulated, compromised, or wrong — its environment must prevent a bad decision from becoming an unrestricted action. These controls are verified out-of-band via the evidence-collect protocol, not by the agent auditing itself.\n",
+        "id": "agent-environment",
+        "name": "AI Agent Environment Checklist",
+        "version": "1.0.0"
+      }
+    },
     "harness-engineering": {
       "items": [
         {
           "category": "architecture",
-          "description": "The harness must grant only the minimum capabilities required for the intended task. No broad or unrestricted access to system resources.\n",
+          "control": "The harness must grant only the minimum capabilities required for the intended task. No broad or unrestricted access to system resources.",
           "id": "HE-001",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "OWASP ASVS v4.2 — V1 Architecture",
             "NIST SP 800-53 — AC-6 Least Privilege"
           ],
-          "severity": "critical",
-          "title": "Least-privilege principle enforced in harness design",
-          "validation": {
-            "evidence_required": "Architecture diagram and capability mapping document",
-            "type": "manual_review"
-          }
+          "threat": "Least-privilege principle enforced in harness design",
+          "verification": "manual_review — evidence required: Architecture diagram and capability mapping document"
         },
         {
           "category": "architecture",
-          "description": "A threat model (STRIDE or similar) must exist covering the harness, agent, tool interfaces, and data flows. It must be reviewed at each major release.\n",
+          "control": "A threat model (STRIDE or similar) must exist covering the harness, agent, tool interfaces, and data flows. It must be reviewed at each major release.",
           "id": "HE-002",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "STRIDE threat modeling framework",
             "Microsoft SDL threat modeling"
           ],
-          "severity": "critical",
-          "title": "Threat model documented for harness and agent interactions",
-          "validation": {
-            "evidence_required": "Threat model document with identified threats and mitigations",
-            "type": "manual_review"
-          }
+          "threat": "Threat model documented for harness and agent interactions",
+          "verification": "manual_review — evidence required: Threat model document with identified threats and mitigations"
         },
         {
           "category": "architecture",
-          "description": "Agent workloads must execute within isolated containers, VMs, or sandboxed environments. Host system access must be mediated and restricted.\n",
+          "control": "Agent workloads must execute within isolated containers, VMs, or sandboxed environments. Host system access must be mediated and restricted.",
           "id": "HE-003",
-          "references": [
+          "severity": "high",
+          "sources": [
             "CIS Docker Benchmark",
             "NIST SP 800-53 — SC-3 Security Function Isolation"
           ],
-          "severity": "high",
-          "title": "Sandbox or container isolation for agent execution",
-          "validation": {
-            "evidence_required": "Container runtime configuration and isolation policy",
-            "type": "automated"
-          }
+          "threat": "Sandbox or container isolation for agent execution",
+          "verification": "automated — evidence required: Container runtime configuration and isolation policy"
         },
         {
           "category": "architecture",
-          "description": "Agent containers must have network policies that restrict outbound connections to only approved endpoints. Default-deny egress is required.\n",
+          "control": "Agent containers must have network policies that restrict outbound connections to only approved endpoints. Default-deny egress is required.",
           "id": "HE-004",
-          "references": [
+          "severity": "high",
+          "sources": [
             "Kubernetes NetworkPolicy documentation",
             "NIST SP 800-53 — SC-7 Boundary Protection"
           ],
-          "severity": "high",
-          "title": "Network egress restrictions enforced on agent environments",
-          "validation": {
-            "evidence_required": "Network policy manifests and egress allow-list",
-            "type": "automated"
-          }
+          "threat": "Network egress restrictions enforced on agent environments",
+          "verification": "automated — evidence required: Network policy manifests and egress allow-list"
         },
         {
           "category": "architecture",
-          "description": "API keys, tokens, and other secrets must not appear in configuration files, environment variables in plaintext, or source code. A secrets manager or vault must be used.\n",
+          "control": "API keys, tokens, and other secrets must not appear in configuration files, environment variables in plaintext, or source code. A secrets manager or vault must be used.",
           "id": "HE-005",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP Top 10 — A02 Cryptographic Failures",
             "HashiCorp Vault documentation"
           ],
-          "severity": "high",
-          "title": "Secrets management separates credentials from configuration",
-          "validation": {
-            "evidence_required": "Secrets management configuration and scan results showing no hardcoded secrets",
-            "type": "automated"
-          }
+          "threat": "Secrets management separates credentials from configuration",
+          "verification": "automated — evidence required: Secrets management configuration and scan results showing no hardcoded secrets"
         },
         {
           "category": "prompt-engineering",
-          "description": "System prompts must explicitly define what the agent must NOT do, including refusal policies for harmful, unethical, or out-of-scope requests. Constraints must be specific and unambiguous.\n",
+          "control": "System prompts must explicitly define what the agent must NOT do, including refusal policies for harmful, unethical, or out-of-scope requests. Constraints must be specific and unambiguous.",
           "id": "HE-006",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "OWASP LLM Top 10 — LLM01 Prompt Injection",
             "NIST AI RMF — GOVERN 1.2"
           ],
-          "severity": "critical",
-          "title": "System prompts include behavioral constraints and refusal policies",
-          "validation": {
-            "evidence_required": "System prompt document with marked constraint sections",
-            "type": "manual_review"
-          }
+          "threat": "System prompts include behavioral constraints and refusal policies",
+          "verification": "manual_review — evidence required: System prompt document with marked constraint sections"
         },
         {
           "category": "prompt-engineering",
-          "description": "Defense-in-depth against prompt injection must include input sanitization, output filtering, and structural separation between instructions and user data. No single bypass should compromise the system.\n",
+          "control": "Defense-in-depth against prompt injection must include input sanitization, output filtering, and structural separation between instructions and user data. No single bypass should compromise the system.",
           "id": "HE-007",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "OWASP LLM Top 10 — LLM01 Prompt Injection",
             "SimPromptons: Prompt injection simulation framework"
           ],
-          "severity": "critical",
-          "title": "Prompt injection defenses implemented at multiple layers",
-          "validation": {
-            "evidence_required": "Defense layer diagram and red-team test results",
-            "type": "hybrid"
-          }
+          "threat": "Prompt injection defenses implemented at multiple layers",
+          "verification": "hybrid — evidence required: Defense layer diagram and red-team test results"
         },
         {
           "category": "prompt-engineering",
-          "description": "The agent must not be instructed to act as a system administrator, root user, or other privileged entity. Role definitions must scope authority to the task domain only.\n",
+          "control": "The agent must not be instructed to act as a system administrator, root user, or other privileged entity. Role definitions must scope authority to the task domain only.",
           "id": "HE-008",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP LLM Top 10 — LLM06 Excessive Agency",
             "NIST SP 800-53 — AC-2 Account Management"
           ],
-          "severity": "high",
-          "title": "Role and persona boundaries prevent privilege escalation",
-          "validation": {
-            "evidence_required": "System prompt review and role boundary documentation",
-            "type": "manual_review"
-          }
+          "threat": "Role and persona boundaries prevent privilege escalation",
+          "verification": "manual_review — evidence required: System prompt review and role boundary documentation"
         },
         {
           "category": "prompt-engineering",
-          "description": "User-provided data must be distinguished from system instructions using delimiters, tags, or separate message roles. The agent must treat data as untrusted content, not as commands.\n",
+          "control": "User-provided data must be distinguished from system instructions using delimiters, tags, or separate message roles. The agent must treat data as untrusted content, not as commands.",
           "id": "HE-009",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP LLM Top 10 — LLM01 Prompt Injection",
             "LangChain prompt template best practices"
           ],
-          "severity": "high",
-          "title": "Instruction and data channels are structurally separated",
-          "validation": {
-            "evidence_required": "Prompt template showing structural separation",
-            "type": "manual_review"
-          }
+          "threat": "Instruction and data channels are structurally separated",
+          "verification": "manual_review — evidence required: Prompt template showing structural separation"
         },
         {
           "category": "prompt-engineering",
-          "description": "All agent outputs destined for end users must pass through an output filter that blocks PII leaks, code execution, and harmful content.\n",
+          "control": "All agent outputs destined for end users must pass through an output filter that blocks PII leaks, code execution, and harmful content.",
           "id": "HE-010",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "OWASP LLM Top 10 — LLM02 Insecure Output Handling"
           ],
-          "severity": "medium",
-          "title": "Output validation prevents agent from emitting harmful content",
-          "validation": {
-            "evidence_required": "Output filter configuration and test suite results",
-            "type": "automated"
-          }
+          "threat": "Output validation prevents agent from emitting harmful content",
+          "verification": "automated — evidence required: Output filter configuration and test suite results"
         },
         {
           "category": "tool-boundaries",
-          "description": "The harness must enumerate every tool, API, or capability the agent may access. Any tool not on the allow-list must be inaccessible at runtime.\n",
+          "control": "The harness must enumerate every tool, API, or capability the agent may access. Any tool not on the allow-list must be inaccessible at runtime.",
           "id": "HE-011",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "OWASP LLM Top 10 — LLM06 Excessive Agency",
             "NIST SP 800-53 — AC-3 Access Enforcement"
           ],
-          "severity": "critical",
-          "title": "Tool allow-list restricts agent to approved operations only",
-          "validation": {
-            "evidence_required": "Tool allow-list configuration and runtime enforcement logs",
-            "type": "automated"
-          }
+          "threat": "Tool allow-list restricts agent to approved operations only",
+          "verification": "automated — evidence required: Tool allow-list configuration and runtime enforcement logs"
         },
         {
           "category": "tool-boundaries",
-          "description": "Any tool call that deletes data, modifies infrastructure, or sends communications externally must require a human-in-the-loop confirmation before execution.\n",
+          "control": "Any tool call that deletes data, modifies infrastructure, or sends communications externally must require a human-in-the-loop confirmation before execution.",
           "id": "HE-012",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "NIST SP 800-53 — AC-3 Access Enforcement",
             "OWASP LLM Top 10 — LLM06 Excessive Agency"
           ],
-          "severity": "critical",
-          "title": "Destructive operations require explicit human approval",
-          "validation": {
-            "evidence_required": "Approval workflow configuration and audit logs",
-            "type": "manual_review"
-          }
+          "threat": "Destructive operations require explicit human approval",
+          "verification": "manual_review — evidence required: Approval workflow configuration and audit logs"
         },
         {
           "category": "tool-boundaries",
-          "description": "Every tool must declare a JSON schema for its inputs. The harness must reject calls with missing, extra, or wrongly-typed parameters before invoking the tool.\n",
+          "control": "Every tool must declare a JSON schema for its inputs. The harness must reject calls with missing, extra, or wrongly-typed parameters before invoking the tool.",
           "id": "HE-013",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP API Security Top 10 — API8 Security Misconfiguration"
           ],
-          "severity": "high",
-          "title": "Tool schemas validate all inputs before execution",
-          "validation": {
-            "evidence_required": "Tool schema definitions and validation test results",
-            "type": "automated"
-          }
+          "threat": "Tool schemas validate all inputs before execution",
+          "verification": "automated — evidence required: Tool schema definitions and validation test results"
         },
         {
           "category": "tool-boundaries",
-          "description": "Tool invocations must be rate-limited per agent, per session, and globally. Limits must prevent both accidental loops and adversarial resource exhaustion.\n",
+          "control": "Tool invocations must be rate-limited per agent, per session, and globally. Limits must prevent both accidental loops and adversarial resource exhaustion.",
           "id": "HE-014",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP API Security Top 10 — API4 Unrestricted Resource Consumption",
             "NIST SP 800-53 — SC-5 Denial of Service Protection"
           ],
-          "severity": "high",
-          "title": "Rate limiting prevents tool abuse or resource exhaustion",
-          "validation": {
-            "evidence_required": "Rate limit configuration and load test results",
-            "type": "automated"
-          }
+          "threat": "Rate limiting prevents tool abuse or resource exhaustion",
+          "verification": "automated — evidence required: Rate limit configuration and load test results"
         },
         {
           "category": "tool-boundaries",
-          "description": "Error responses from tools must be sanitized before being returned to the agent. Stack traces, file paths, and database details must be stripped or generalized.\n",
+          "control": "Error responses from tools must be sanitized before being returned to the agent. Stack traces, file paths, and database details must be stripped or generalized.",
           "id": "HE-015",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "OWASP Top 10 — A05 Security Misconfiguration"
           ],
-          "severity": "medium",
-          "title": "Tool error messages do not leak internal system details",
-          "validation": {
-            "evidence_required": "Error handling configuration and fuzzing test results",
-            "type": "automated"
-          }
+          "threat": "Tool error messages do not leak internal system details",
+          "verification": "automated — evidence required: Error handling configuration and fuzzing test results"
         },
         {
           "category": "runtime-controls",
-          "description": "Every agent session must have a hard execution timeout. The harness must terminate the agent and rollback partial changes if the timeout is exceeded.\n",
+          "control": "Every agent session must have a hard execution timeout. The harness must terminate the agent and rollback partial changes if the timeout is exceeded.",
           "id": "HE-016",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "NIST SP 800-53 — SC-5 Denial of Service Protection"
           ],
-          "severity": "critical",
-          "title": "Execution timeout prevents runaway agent loops",
-          "validation": {
-            "evidence_required": "Timeout configuration and timeout-recovery test results",
-            "type": "automated"
-          }
+          "threat": "Execution timeout prevents runaway agent loops",
+          "verification": "automated — evidence required: Timeout configuration and timeout-recovery test results"
         },
         {
           "category": "runtime-controls",
-          "description": "Each session must have a maximum token budget and estimated cost budget. The harness must abort the session if either budget is exhausted.\n",
+          "control": "Each session must have a maximum token budget and estimated cost budget. The harness must abort the session if either budget is exhausted.",
           "id": "HE-017",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP LLM Top 10 — LLM10 Unbounded Consumption"
           ],
-          "severity": "high",
-          "title": "Token and cost budgets enforced per session",
-          "validation": {
-            "evidence_required": "Budget configuration and budget-exhaustion test results",
-            "type": "automated"
-          }
+          "threat": "Token and cost budgets enforced per session",
+          "verification": "automated — evidence required: Budget configuration and budget-exhaustion test results"
         },
         {
           "category": "runtime-controls",
-          "description": "If an agent session fails or is terminated, the harness must be able to roll back any partial changes made by the agent to restore system state.\n",
+          "control": "If an agent session fails or is terminated, the harness must be able to roll back any partial changes made by the agent to restore system state.",
           "id": "HE-018",
-          "references": [
+          "severity": "high",
+          "sources": [
             "NIST SP 800-53 — CP-10 System Recovery",
             "OWASP LLM Top 10 — LLM06 Excessive Agency"
           ],
-          "severity": "high",
-          "title": "Rollback mechanism reverses partial actions on failure",
-          "validation": {
-            "evidence_required": "Rollback procedure documentation and failure-recovery test results",
-            "type": "manual_review"
-          }
+          "threat": "Rollback mechanism reverses partial actions on failure",
+          "verification": "manual_review — evidence required: Rollback procedure documentation and failure-recovery test results"
         },
         {
           "category": "runtime-controls",
-          "description": "Every tool call, decision, and output must be logged with the agent identity, session ID, timestamp, input, and output. Logs must be tamper-evident.\n",
+          "control": "Every tool call, decision, and output must be logged with the agent identity, session ID, timestamp, input, and output. Logs must be tamper-evident.",
           "id": "HE-019",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "NIST SP 800-53 — AU-2 Audit Events",
             "NIST SP 800-53 — AU-10 Non-repudiation"
           ],
-          "severity": "medium",
-          "title": "Agent actions are logged with full provenance",
-          "validation": {
-            "evidence_required": "Logging configuration and log integrity verification results",
-            "type": "automated"
-          }
+          "threat": "Agent actions are logged with full provenance",
+          "verification": "automated — evidence required: Logging configuration and log integrity verification results"
         },
         {
           "category": "runtime-controls",
-          "description": "The harness must implement circuit breakers that prevent new sessions when failure rates exceed defined thresholds, preventing cascading failures.\n",
+          "control": "The harness must implement circuit breakers that prevent new sessions when failure rates exceed defined thresholds, preventing cascading failures.",
           "id": "HE-020",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "NIST SP 800-53 — SC-5 Denial of Service Protection"
           ],
-          "severity": "medium",
-          "title": "Circuit breakers halt repeated failures across sessions",
-          "validation": {
-            "evidence_required": "Circuit breaker configuration and failure-injection test results",
-            "type": "automated"
-          }
+          "threat": "Circuit breakers halt repeated failures across sessions",
+          "verification": "automated — evidence required: Circuit breaker configuration and failure-injection test results"
         },
         {
           "category": "observability",
-          "description": "The harness must provide a complete, queryable record of every agent-to-tool interaction, including the reasoning that led to the call, the parameters, and the response.\n",
+          "control": "The harness must provide a complete, queryable record of every agent-to-tool interaction, including the reasoning that led to the call, the parameters, and the response.",
           "id": "HE-021",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "NIST SP 800-53 — AU-2 Audit Events",
             "OpenTelemetry specification"
           ],
-          "severity": "critical",
-          "title": "All agent-to-tool interactions are observable and traceable",
-          "validation": {
-            "evidence_required": "Observability architecture and sample trace output",
-            "type": "manual_review"
-          }
+          "threat": "All agent-to-tool interactions are observable and traceable",
+          "verification": "manual_review — evidence required: Observability architecture and sample trace output"
         },
         {
           "category": "observability",
-          "description": "Monitoring must detect anomalies such as repeated tool failures, unexpected tool combinations, elevated token usage, or deviation from baseline behavior patterns.\n",
+          "control": "Monitoring must detect anomalies such as repeated tool failures, unexpected tool combinations, elevated token usage, or deviation from baseline behavior patterns.",
           "id": "HE-022",
-          "references": [
+          "severity": "high",
+          "sources": [
             "NIST SP 800-53 — SI-4 System Monitoring",
             "OWASP LLM Top 10 — LLM10 Unbounded Consumption"
           ],
-          "severity": "high",
-          "title": "Anomaly detection alerts on unusual agent behavior patterns",
-          "validation": {
-            "evidence_required": "Anomaly detection rules and alert configuration",
-            "type": "automated"
-          }
+          "threat": "Anomaly detection alerts on unusual agent behavior patterns",
+          "verification": "automated — evidence required: Anomaly detection rules and alert configuration"
         },
         {
           "category": "observability",
-          "description": "Operations teams must have real-time dashboards showing active sessions, tool call rates, error rates, budget consumption, and safety flags.\n",
+          "control": "Operations teams must have real-time dashboards showing active sessions, tool call rates, error rates, budget consumption, and safety flags.",
           "id": "HE-023",
-          "references": [
+          "severity": "high",
+          "sources": [
             "NIST SP 800-53 — SI-4 System Monitoring"
           ],
-          "severity": "high",
-          "title": "Dashboards display real-time agent safety and health metrics",
-          "validation": {
-            "evidence_required": "Dashboard screenshots or configuration",
-            "type": "manual_review"
-          }
+          "threat": "Dashboards display real-time agent safety and health metrics",
+          "verification": "manual_review — evidence required: Dashboard screenshots or configuration"
         },
         {
           "category": "observability",
-          "description": "A documented incident response playbook must exist specifically for agent-related safety events, including prompt injection, data exfiltration, and unauthorized tool use.\n",
+          "control": "A documented incident response playbook must exist specifically for agent-related safety events, including prompt injection, data exfiltration, and unauthorized tool use.",
           "id": "HE-024",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "NIST SP 800-61 — Incident Handling",
             "OWASP LLM Top 10"
           ],
-          "severity": "medium",
-          "title": "Incident response playbook covers agent safety events",
-          "validation": {
-            "evidence_required": "Incident response playbook document",
-            "type": "manual_review"
-          }
+          "threat": "Incident response playbook covers agent safety events",
+          "verification": "manual_review — evidence required: Incident response playbook document"
         },
         {
           "category": "observability",
-          "description": "Agent behavior logs must be reviewed on a defined schedule. Reviews must look for policy violations, emerging threats, and opportunities to tighten controls.\n",
+          "control": "Agent behavior logs must be reviewed on a defined schedule. Reviews must look for policy violations, emerging threats, and opportunities to tighten controls.",
           "id": "HE-025",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "NIST SP 800-53 — AU-6 Audit Review and Analysis",
             "NIST SP 800-53 — CA-2 Security Assessments"
           ],
-          "severity": "medium",
-          "title": "Regular audit reviews of agent behavior logs",
-          "validation": {
-            "evidence_required": "Audit schedule and most recent audit report",
-            "type": "manual_review"
-          }
+          "threat": "Regular audit reviews of agent behavior logs",
+          "verification": "manual_review — evidence required: Audit schedule and most recent audit report"
         }
       ],
       "meta": {
@@ -791,302 +923,242 @@
       "items": [
         {
           "category": "prompt-injection",
-          "description": "Test that user inputs cannot override or bypass system instructions. Include prefix injection, role override, instruction hijacking, and context manipulation attacks. All must be blocked.\n",
+          "control": "Test that user inputs cannot override or bypass system instructions. Include prefix injection, role override, instruction hijacking, and context manipulation attacks. All must be blocked.",
           "id": "RT-001",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "OWASP LLM Top 10 — LLM01 Prompt Injection",
             "NIST AI 100-2e2023 — Adversarial Machine Learning"
           ],
-          "severity": "critical",
-          "title": "Direct prompt injection attacks tested and mitigated",
-          "validation": {
-            "evidence_required": "Red team test report with attack payloads and defense results",
-            "type": "hybrid"
-          }
+          "threat": "Direct prompt injection attacks tested and mitigated",
+          "verification": "hybrid — evidence required: Red team test report with attack payloads and defense results"
         },
         {
           "category": "prompt-injection",
-          "description": "Test that data fetched by the agent (web pages, file contents, API responses) cannot contain embedded instructions that the agent follows. Injected commands in markdown, HTML, JSON, and PDF must be neutralized.\n",
+          "control": "Test that data fetched by the agent (web pages, file contents, API responses) cannot contain embedded instructions that the agent follows. Injected commands in markdown, HTML, JSON, and PDF must be neutralized.",
           "id": "RT-002",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "OWASP LLM Top 10 — LLM01 Prompt Injection",
             "Data-driven prompt injection research"
           ],
-          "severity": "critical",
-          "title": "Indirect prompt injection via data channels tested",
-          "validation": {
-            "evidence_required": "Indirect injection test report with data-borne payloads and results",
-            "type": "hybrid"
-          }
+          "threat": "Indirect prompt injection via data channels tested",
+          "verification": "hybrid — evidence required: Indirect injection test report with data-borne payloads and results"
         },
         {
           "category": "prompt-injection",
-          "description": "Test that adversarial instructions cannot be built up over multiple turns or spread across context windows. The agent must not follow instructions assembled from fragments.\n",
+          "control": "Test that adversarial instructions cannot be built up over multiple turns or spread across context windows. The agent must not follow instructions assembled from fragments.",
           "id": "RT-003",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP LLM Top 10 — LLM01 Prompt Injection"
           ],
-          "severity": "high",
-          "title": "Multi-turn and context accumulation attacks tested",
-          "validation": {
-            "evidence_required": "Multi-turn attack scenario report",
-            "type": "manual_review"
-          }
+          "threat": "Multi-turn and context accumulation attacks tested",
+          "verification": "manual_review — evidence required: Multi-turn attack scenario report"
         },
         {
           "category": "prompt-injection",
-          "description": "Test that the agent does not comply with jailbreak attempts including DAN mode, developer mode, hypothetical scenarios, or role-play that circumvents safety constraints.\n",
+          "control": "Test that the agent does not comply with jailbreak attempts including DAN mode, developer mode, hypothetical scenarios, or role-play that circumvents safety constraints.",
           "id": "RT-004",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP LLM Top 10 — LLM01 Prompt Injection",
             "NIST AI RMF — MAP 2.3"
           ],
-          "severity": "high",
-          "title": "Jailbreak and role-play escape attempts tested",
-          "validation": {
-            "evidence_required": "Jailbreak test report with evasion attempts and results",
-            "type": "hybrid"
-          }
+          "threat": "Jailbreak and role-play escape attempts tested",
+          "verification": "hybrid — evidence required: Jailbreak test report with evasion attempts and results"
         },
         {
           "category": "tool-abuse",
-          "description": "Red team must verify that the agent cannot discover, enumerate, or invoke tools that are not on its allow-list. Tool discovery through error messages, documentation access, or probing must fail.\n",
+          "control": "Red team must verify that the agent cannot discover, enumerate, or invoke tools that are not on its allow-list. Tool discovery through error messages, documentation access, or probing must fail.",
           "id": "RT-005",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "OWASP LLM Top 10 — LLM06 Excessive Agency",
             "NIST SP 800-53 — AC-3 Access Enforcement"
           ],
-          "severity": "critical",
-          "title": "Agent cannot access or invoke unauthorized tools",
-          "validation": {
-            "evidence_required": "Tool enumeration test report and allow-list enforcement logs",
-            "type": "hybrid"
-          }
+          "threat": "Agent cannot access or invoke unauthorized tools",
+          "verification": "hybrid — evidence required: Tool enumeration test report and allow-list enforcement logs"
         },
         {
           "category": "tool-abuse",
-          "description": "Test that the agent cannot modify tool parameters to escalate privileges, inject commands, or bypass constraints. Path traversal, command injection, and type confusion in tool parameters must be blocked.\n",
+          "control": "Test that the agent cannot modify tool parameters to escalate privileges, inject commands, or bypass constraints. Path traversal, command injection, and type confusion in tool parameters must be blocked.",
           "id": "RT-006",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "OWASP LLM Top 10 — LLM06 Excessive Agency",
             "OWASP API Security Top 10 — API8 Security Misconfiguration"
           ],
-          "severity": "critical",
-          "title": "Tool parameter manipulation attacks tested",
-          "validation": {
-            "evidence_required": "Tool parameter manipulation test report",
-            "type": "hybrid"
-          }
+          "threat": "Tool parameter manipulation attacks tested",
+          "verification": "hybrid — evidence required: Tool parameter manipulation test report"
         },
         {
           "category": "tool-abuse",
-          "description": "Test that the agent cannot chain multiple permitted tools to achieve an unauthorized outcome. For example, combining file read and file write to escalate privileges or exfiltrate data.\n",
+          "control": "Test that the agent cannot chain multiple permitted tools to achieve an unauthorized outcome. For example, combining file read and file write to escalate privileges or exfiltrate data.",
           "id": "RT-007",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP LLM Top 10 — LLM06 Excessive Agency",
             "NIST AI RMF — MEASURE 2.6"
           ],
-          "severity": "high",
-          "title": "Tool chaining attacks to achieve unauthorized goals tested",
-          "validation": {
-            "evidence_required": "Tool chaining attack scenario report",
-            "type": "manual_review"
-          }
+          "threat": "Tool chaining attacks to achieve unauthorized goals tested",
+          "verification": "manual_review — evidence required: Tool chaining attack scenario report"
         },
         {
           "category": "tool-abuse",
-          "description": "Test that the agent cannot exhaust system resources by invoking tools in loops, requesting large outputs, or creating excessive side effects. Rate limits and budgets must hold.\n",
+          "control": "Test that the agent cannot exhaust system resources by invoking tools in loops, requesting large outputs, or creating excessive side effects. Rate limits and budgets must hold.",
           "id": "RT-008",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP LLM Top 10 — LLM10 Unbounded Consumption",
             "NIST SP 800-53 — SC-5 Denial of Service Protection"
           ],
-          "severity": "high",
-          "title": "Resource exhaustion through tool invocation tested",
-          "validation": {
-            "evidence_required": "Resource exhaustion test results and rate limit verification",
-            "type": "automated"
-          }
+          "threat": "Resource exhaustion through tool invocation tested",
+          "verification": "automated — evidence required: Resource exhaustion test results and rate limit verification"
         },
         {
           "category": "data-exfiltration",
-          "description": "Test that the agent cannot be tricked into revealing its system prompt, instructions, or internal configuration through direct requests, encoding tricks, or translation attacks.\n",
+          "control": "Test that the agent cannot be tricked into revealing its system prompt, instructions, or internal configuration through direct requests, encoding tricks, or translation attacks.",
           "id": "RT-009",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "OWASP LLM Top 10 — LLM06 Excessive Agency",
             "NIST AI RMF — MAP 2.3"
           ],
-          "severity": "critical",
-          "title": "Prompt and system instruction leakage tested",
-          "validation": {
-            "evidence_required": "Prompt leakage test report with extraction attempts and results",
-            "type": "hybrid"
-          }
+          "threat": "Prompt and system instruction leakage tested",
+          "verification": "hybrid — evidence required: Prompt leakage test report with extraction attempts and results"
         },
         {
           "category": "data-exfiltration",
-          "description": "Test that the agent cannot be induced to regurgitate training data, PII, or proprietary information through completion attacks, few-shot extraction, or targeted prompts.\n",
+          "control": "Test that the agent cannot be induced to regurgitate training data, PII, or proprietary information through completion attacks, few-shot extraction, or targeted prompts.",
           "id": "RT-010",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "OWASP LLM Top 10 — LLM10 Unbounded Consumption",
             "NIST AI 100-2e2023 — Training Data Extraction"
           ],
-          "severity": "critical",
-          "title": "Training data extraction attacks tested",
-          "validation": {
-            "evidence_required": "Training data extraction test report",
-            "type": "hybrid"
-          }
+          "threat": "Training data extraction attacks tested",
+          "verification": "hybrid — evidence required: Training data extraction test report"
         },
         {
           "category": "data-exfiltration",
-          "description": "Test that the agent cannot exfiltrate data through covert channels such as DNS lookups, timing side channels, steganography in outputs, or URL construction with encoded data.\n",
+          "control": "Test that the agent cannot exfiltrate data through covert channels such as DNS lookups, timing side channels, steganography in outputs, or URL construction with encoded data.",
           "id": "RT-011",
-          "references": [
+          "severity": "high",
+          "sources": [
             "NIST SP 800-53 — SC-7 Boundary Protection",
             "OWASP LLM Top 10 — LLM02 Insecure Output Handling"
           ],
-          "severity": "high",
-          "title": "Data exfiltration via covert channels tested",
-          "validation": {
-            "evidence_required": "Covert channel test report and monitoring verification",
-            "type": "manual_review"
-          }
+          "threat": "Data exfiltration via covert channels tested",
+          "verification": "manual_review — evidence required: Covert channel test report and monitoring verification"
         },
         {
           "category": "data-exfiltration",
-          "description": "Test that data from one user session cannot leak into another user session. Context isolation between sessions, users, and tenants must be verified.\n",
+          "control": "Test that data from one user session cannot leak into another user session. Context isolation between sessions, users, and tenants must be verified.",
           "id": "RT-012",
-          "references": [
-            "OWASP Top 10 — A01 Broken Access Control",
-            "NIST SP 800-53 — AC-4 Information Flow Enforcement"
-          ],
           "severity": "high",
-          "title": "Cross-session data contamination tested",
-          "validation": {
-            "evidence_required": "Cross-session isolation test results",
-            "type": "automated"
-          }
-        },
-        {
-          "category": "auth-bypass",
-          "description": "Test that one user cannot access or modify another user's agents, sessions, data, or configurations. Tenant isolation must be verified.\n",
-          "id": "RT-013",
-          "references": [
+          "sources": [
             "OWASP Top 10 — A01 Broken Access Control",
             "NIST SP 800-53 — AC-4 Information Flow Enforcement"
           ],
-          "severity": "critical",
-          "title": "Horizontal privilege escalation between users tested",
-          "validation": {
-            "evidence_required": "Horizontal escalation test report",
-            "type": "automated"
-          }
+          "threat": "Cross-session data contamination tested",
+          "verification": "automated — evidence required: Cross-session isolation test results"
         },
         {
           "category": "auth-bypass",
-          "description": "Test that a standard user cannot escalate to administrator privileges through the harness API, agent actions, or configuration manipulation.\n",
+          "control": "Test that one user cannot access or modify another user's agents, sessions, data, or configurations. Tenant isolation must be verified.",
+          "id": "RT-013",
+          "severity": "critical",
+          "sources": [
+            "OWASP Top 10 — A01 Broken Access Control",
+            "NIST SP 800-53 — AC-4 Information Flow Enforcement"
+          ],
+          "threat": "Horizontal privilege escalation between users tested",
+          "verification": "automated — evidence required: Horizontal escalation test report"
+        },
+        {
+          "category": "auth-bypass",
+          "control": "Test that a standard user cannot escalate to administrator privileges through the harness API, agent actions, or configuration manipulation.",
           "id": "RT-014",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "OWASP Top 10 — A01 Broken Access Control",
             "NIST SP 800-53 — AC-6 Least Privilege"
           ],
-          "severity": "critical",
-          "title": "Vertical privilege escalation to admin tested",
-          "validation": {
-            "evidence_required": "Vertical escalation test report",
-            "type": "hybrid"
-          }
+          "threat": "Vertical privilege escalation to admin tested",
+          "verification": "hybrid — evidence required: Vertical escalation test report"
         },
         {
           "category": "auth-bypass",
-          "description": "Test all harness API endpoints for authentication bypass including missing auth, token tampering, JWT manipulation, and session fixation.\n",
+          "control": "Test all harness API endpoints for authentication bypass including missing auth, token tampering, JWT manipulation, and session fixation.",
           "id": "RT-015",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP API Security Top 10 — API2 Broken Authentication",
             "OWASP ASVS — V2 Authentication"
           ],
-          "severity": "high",
-          "title": "API authentication bypass attempts tested",
-          "validation": {
-            "evidence_required": "API authentication bypass test results",
-            "type": "automated"
-          }
+          "threat": "API authentication bypass attempts tested",
+          "verification": "automated — evidence required: API authentication bypass test results"
         },
         {
           "category": "auth-bypass",
-          "description": "Test for insecure direct object references where an agent or user can access resources belonging to another agent or user by changing identifiers in requests.\n",
+          "control": "Test for insecure direct object references where an agent or user can access resources belonging to another agent or user by changing identifiers in requests.",
           "id": "RT-016",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP API Security Top 10 — API1 Broken Object-Level Authorization",
             "OWASP ASVS — V4 Access Control"
           ],
-          "severity": "high",
-          "title": "IDOR and object-level authorization bypass tested",
-          "validation": {
-            "evidence_required": "IDOR test report and authorization boundary verification",
-            "type": "automated"
-          }
+          "threat": "IDOR and object-level authorization bypass tested",
+          "verification": "automated — evidence required: IDOR test report and authorization boundary verification"
         },
         {
           "category": "resilience",
-          "description": "Red team must perform load testing to verify that rate limits, token budgets, and timeout controls hold under sustained and burst traffic.\n",
+          "control": "Red team must perform load testing to verify that rate limits, token budgets, and timeout controls hold under sustained and burst traffic.",
           "id": "RT-017",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP LLM Top 10 — LLM10 Unbounded Consumption",
             "NIST SP 800-53 — SC-5 Denial of Service Protection"
           ],
-          "severity": "high",
-          "title": "Load and stress testing validates rate limit effectiveness",
-          "validation": {
-            "evidence_required": "Load test report with rate limit effectiveness metrics",
-            "type": "automated"
-          }
+          "threat": "Load and stress testing validates rate limit effectiveness",
+          "verification": "automated — evidence required: Load test report with rate limit effectiveness metrics"
         },
         {
           "category": "resilience",
-          "description": "Test that the harness degrades gracefully when dependencies (LLM API, database, tool services) fail. No data corruption, no cascading failures, and clear error reporting to users.\n",
+          "control": "Test that the harness degrades gracefully when dependencies (LLM API, database, tool services) fail. No data corruption, no cascading failures, and clear error reporting to users.",
           "id": "RT-018",
-          "references": [
+          "severity": "high",
+          "sources": [
             "NIST SP 800-53 — CP-10 System Recovery",
             "OWASP ASVS — V11 Error Handling"
           ],
-          "severity": "high",
-          "title": "Graceful degradation under partial failure tested",
-          "validation": {
-            "evidence_required": "Failure injection test report and degradation behavior documentation",
-            "type": "manual_review"
-          }
+          "threat": "Graceful degradation under partial failure tested",
+          "verification": "manual_review — evidence required: Failure injection test report and degradation behavior documentation"
         },
         {
           "category": "resilience",
-          "description": "Test that the harness handles adversarial inputs gracefully: extremely long inputs, Unicode exploits, null bytes, format strings, and encoding attacks. No crashes or undefined behavior.\n",
+          "control": "Test that the harness handles adversarial inputs gracefully: extremely long inputs, Unicode exploits, null bytes, format strings, and encoding attacks. No crashes or undefined behavior.",
           "id": "RT-019",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "OWASP ASVS — V11 Error Handling",
             "NIST AI 100-2e2023 — Robustness Testing"
           ],
-          "severity": "medium",
-          "title": "Adversarial input robustness tested across edge cases",
-          "validation": {
-            "evidence_required": "Fuzzing test report with edge case results",
-            "type": "automated"
-          }
+          "threat": "Adversarial input robustness tested across edge cases",
+          "verification": "automated — evidence required: Fuzzing test report with edge case results"
         },
         {
           "category": "resilience",
-          "description": "Every red team finding must be tracked in a vulnerability management system with severity-based SLAs. Critical findings must be remediated within 7 days, high within 30 days, and medium within 90 days.\n",
+          "control": "Every red team finding must be tracked in a vulnerability management system with severity-based SLAs. Critical findings must be remediated within 7 days, high within 30 days, and medium within 90 days.",
           "id": "RT-020",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "NIST SP 800-53 — RA-5 Vulnerability Scanning",
             "NIST SP 800-53 — SI-2 Flaw Remediation"
           ],
-          "severity": "medium",
-          "title": "Red team findings are tracked to remediation with SLAs",
-          "validation": {
-            "evidence_required": "Vulnerability tracking system export and SLA compliance report",
-            "type": "manual_review"
-          }
+          "threat": "Red team findings are tracked to remediation with SLAs",
+          "verification": "manual_review — evidence required: Vulnerability tracking system export and SLA compliance report"
         }
       ],
       "meta": {
@@ -1127,228 +1199,183 @@
       "items": [
         {
           "category": "dependency-management",
-          "description": "A complete SBOM must be generated and maintained for all harness components, including transitive dependencies. SBOM must be in a machine-readable format (CycloneDX or SPDX).\n",
+          "control": "A complete SBOM must be generated and maintained for all harness components, including transitive dependencies. SBOM must be in a machine-readable format (CycloneDX or SPDX).",
           "id": "SC-001",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "NIST SP 800-161r1 — Cybersecurity Supply Chain Risk Management",
             "EO 14028 — Software Bill of Materials"
           ],
-          "severity": "critical",
-          "title": "Complete Software Bill of Materials (SBOM) maintained",
-          "validation": {
-            "evidence_required": "SBOM file in CycloneDX or SPDX format and generation pipeline configuration",
-            "type": "automated"
-          }
+          "threat": "Complete Software Bill of Materials (SBOM) maintained",
+          "verification": "automated — evidence required: SBOM file in CycloneDX or SPDX format and generation pipeline configuration"
         },
         {
           "category": "dependency-management",
-          "description": "All dependencies must be scanned for known vulnerabilities using automated tools (e.g., OSV, Snyk, Trivy). Scans must run on every build and nightly. Critical and high CVEs must be resolved or formally accepted within SLA.\n",
+          "control": "All dependencies must be scanned for known vulnerabilities using automated tools (e.g., OSV, Snyk, Trivy). Scans must run on every build and nightly. Critical and high CVEs must be resolved or formally accepted within SLA.",
           "id": "SC-002",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "NIST SP 800-53 — RA-5 Vulnerability Scanning",
             "NIST SP 800-53 — SI-2 Flaw Remediation"
           ],
-          "severity": "critical",
-          "title": "Automated vulnerability scanning of all dependencies",
-          "validation": {
-            "evidence_required": "Vulnerability scan results and remediation tracking",
-            "type": "automated"
-          }
+          "threat": "Automated vulnerability scanning of all dependencies",
+          "verification": "automated — evidence required: Vulnerability scan results and remediation tracking"
         },
         {
           "category": "dependency-management",
-          "description": "All dependency versions must be pinned to exact versions with integrity hashes (SHA-256). No floating version ranges in production lock files. Hash verification must be enforced at install time.\n",
+          "control": "All dependency versions must be pinned to exact versions with integrity hashes (SHA-256). No floating version ranges in production lock files. Hash verification must be enforced at install time.",
           "id": "SC-003",
-          "references": [
+          "severity": "high",
+          "sources": [
             "SLSA Framework — Build Level 2",
             "NIST SP 800-161r1 — Supply Chain Risk Management"
           ],
-          "severity": "high",
-          "title": "Dependency versions pinned with integrity hashes",
-          "validation": {
-            "evidence_required": "Lock file with integrity hashes and verification script output",
-            "type": "automated"
-          }
+          "threat": "Dependency versions pinned with integrity hashes",
+          "verification": "automated — evidence required: Lock file with integrity hashes and verification script output"
         },
         {
           "category": "dependency-management",
-          "description": "Production builds must pull dependencies from a private registry or verified mirror, not directly from public registries. This prevents dependency confusion and typosquatting attacks.\n",
+          "control": "Production builds must pull dependencies from a private registry or verified mirror, not directly from public registries. This prevents dependency confusion and typosquatting attacks.",
           "id": "SC-004",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP Supply Chain — Dependency Confusion",
             "NIST SP 800-161r1 — Supply Chain Risk Management"
           ],
-          "severity": "high",
-          "title": "Private dependency registry or mirror used",
-          "validation": {
-            "evidence_required": "Private registry configuration and dependency resolution logs",
-            "type": "manual_review"
-          }
+          "threat": "Private dependency registry or mirror used",
+          "verification": "manual_review — evidence required: Private registry configuration and dependency resolution logs"
         },
         {
           "category": "dependency-management",
-          "description": "The dependency tree must be regularly audited to remove unused, deprecated, or unmaintained packages. Every dependency must have a clear justification for inclusion.\n",
+          "control": "The dependency tree must be regularly audited to remove unused, deprecated, or unmaintained packages. Every dependency must have a clear justification for inclusion.",
           "id": "SC-005",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "NIST SP 800-53 — CM-7 Least Functionality",
             "OWASP Supply Chain — Dependency Management"
           ],
-          "severity": "medium",
-          "title": "Unused and unnecessary dependencies removed",
-          "validation": {
-            "evidence_required": "Dependency audit report and removal evidence",
-            "type": "automated"
-          }
+          "threat": "Unused and unnecessary dependencies removed",
+          "verification": "automated — evidence required: Dependency audit report and removal evidence"
         },
         {
           "category": "provenance-integrity",
-          "description": "Every release artifact must have a signed provenance attestation (SLSA provenance) that records how it was built, from what sources, and by what builder. Attestations must be verifiable.\n",
+          "control": "Every release artifact must have a signed provenance attestation (SLSA provenance) that records how it was built, from what sources, and by what builder. Attestations must be verifiable.",
           "id": "SC-006",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "SLSA Framework — Build Level 3",
             "in-toto specification"
           ],
-          "severity": "critical",
-          "title": "Build provenance attestation for all release artifacts",
-          "validation": {
-            "evidence_required": "SLSA provenance attestations and verification script output",
-            "type": "automated"
-          }
+          "threat": "Build provenance attestation for all release artifacts",
+          "verification": "automated — evidence required: SLSA provenance attestations and verification script output"
         },
         {
           "category": "provenance-integrity",
-          "description": "All release artifacts — binaries, containers, and packages — must be signed with a code-signing key managed in a hardware security module (HSM) or equivalent. Signatures must be verified before deployment.\n",
+          "control": "All release artifacts — binaries, containers, and packages — must be signed with a code-signing key managed in a hardware security module (HSM) or equivalent. Signatures must be verified before deployment.",
           "id": "SC-007",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "SLSA Framework — Build Level 3",
             "NIST SP 800-53 — SC-12 Cryptographic Key Management"
           ],
-          "severity": "critical",
-          "title": "Code signing enforced for all release artifacts",
-          "validation": {
-            "evidence_required": "Code signing configuration and verification procedure",
-            "type": "manual_review"
-          }
+          "threat": "Code signing enforced for all release artifacts",
+          "verification": "manual_review — evidence required: Code signing configuration and verification procedure"
         },
         {
           "category": "provenance-integrity",
-          "description": "Container images must be signed during build and verified before deployment. Unsigned or tampered images must be rejected by the deployment pipeline and runtime.\n",
+          "control": "Container images must be signed during build and verified before deployment. Unsigned or tampered images must be rejected by the deployment pipeline and runtime.",
           "id": "SC-008",
-          "references": [
+          "severity": "high",
+          "sources": [
             "SLSA Framework — Build Level 3",
             "Sigstore Cosign documentation"
           ],
-          "severity": "high",
-          "title": "Container image signatures verified before deployment",
-          "validation": {
-            "evidence_required": "Image signing configuration and admission controller policy",
-            "type": "automated"
-          }
+          "threat": "Container image signatures verified before deployment",
+          "verification": "automated — evidence required: Image signing configuration and admission controller policy"
         },
         {
           "category": "provenance-integrity",
-          "description": "All commits to protected branches must be signed. Branch protection must require signed commits, passing CI, and at least one reviewer. No force pushes allowed.\n",
+          "control": "All commits to protected branches must be signed. Branch protection must require signed commits, passing CI, and at least one reviewer. No force pushes allowed.",
           "id": "SC-009",
-          "references": [
+          "severity": "high",
+          "sources": [
             "SLSA Framework — Source Level 3",
             "NIST SP 800-53 — CM-5 Change Restrictions"
           ],
-          "severity": "high",
-          "title": "Git commit signing and branch protection enforced",
-          "validation": {
-            "evidence_required": "Repository branch protection settings and commit signing configuration",
-            "type": "automated"
-          }
+          "threat": "Git commit signing and branch protection enforced",
+          "verification": "automated — evidence required: Repository branch protection settings and commit signing configuration"
         },
         {
           "category": "provenance-integrity",
-          "description": "Critical components must build reproducibly — the same source must produce bit-for-bit identical artifacts when built twice. Non- reproducible builds must be investigated and documented.\n",
+          "control": "Critical components must build reproducibly — the same source must produce bit-for-bit identical artifacts when built twice. Non- reproducible builds must be investigated and documented.",
           "id": "SC-010",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "SLSA Framework — Build Level 3",
             "Reproducible Builds specification"
           ],
-          "severity": "medium",
-          "title": "Reproducible builds verified for critical components",
-          "validation": {
-            "evidence_required": "Reproducibility verification results and any exception documentation",
-            "type": "manual_review"
-          }
+          "threat": "Reproducible builds verified for critical components",
+          "verification": "manual_review — evidence required: Reproducibility verification results and any exception documentation"
         },
         {
           "category": "build-pipeline",
-          "description": "Build pipelines must run in ephemeral, hardened environments. No persistent build agents. Build environments must be destroyed after each build to prevent cache poisoning.\n",
+          "control": "Build pipelines must run in ephemeral, hardened environments. No persistent build agents. Build environments must be destroyed after each build to prevent cache poisoning.",
           "id": "SC-011",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "SLSA Framework — Build Level 2",
             "NIST SP 800-53 — CM-2 Baseline Configuration"
           ],
-          "severity": "critical",
-          "title": "CI/CD pipeline runs in hardened ephemeral environments",
-          "validation": {
-            "evidence_required": "CI/CD configuration showing ephemeral runner setup",
-            "type": "automated"
-          }
+          "threat": "CI/CD pipeline runs in hardened ephemeral environments",
+          "verification": "automated — evidence required: CI/CD configuration showing ephemeral runner setup"
         },
         {
           "category": "build-pipeline",
-          "description": "Build pipeline secrets (tokens, signing keys, deploy credentials) must be injected from a secrets manager at runtime. Secrets must never appear in pipeline configuration files, environment variables in logs, or build artifacts.\n",
+          "control": "Build pipeline secrets (tokens, signing keys, deploy credentials) must be injected from a secrets manager at runtime. Secrets must never appear in pipeline configuration files, environment variables in logs, or build artifacts.",
           "id": "SC-012",
-          "references": [
+          "severity": "high",
+          "sources": [
             "OWASP Top 10 — A02 Cryptographic Failures",
             "NIST SP 800-53 — SC-12 Cryptographic Key Management"
           ],
-          "severity": "high",
-          "title": "Pipeline secrets injected, never embedded in configuration",
-          "validation": {
-            "evidence_required": "Pipeline secret configuration and secret scan results",
-            "type": "automated"
-          }
+          "threat": "Pipeline secrets injected, never embedded in configuration",
+          "verification": "automated — evidence required: Pipeline secret configuration and secret scan results"
         },
         {
           "category": "build-pipeline",
-          "description": "All changes to CI/CD pipeline configuration must go through code review and approval. Pipeline-as-code files must be in protected branches with required reviews.\n",
+          "control": "All changes to CI/CD pipeline configuration must go through code review and approval. Pipeline-as-code files must be in protected branches with required reviews.",
           "id": "SC-013",
-          "references": [
+          "severity": "high",
+          "sources": [
             "NIST SP 800-53 — CM-3 Configuration Change Control",
             "SLSA Framework — Source Level 2"
           ],
-          "severity": "high",
-          "title": "Build pipeline changes require review and approval",
-          "validation": {
-            "evidence_required": "Pipeline change approval workflow and recent approval records",
-            "type": "manual_review"
-          }
+          "threat": "Build pipeline changes require review and approval",
+          "verification": "manual_review — evidence required: Pipeline change approval workflow and recent approval records"
         },
         {
           "category": "model-supply-chain",
-          "description": "All model weights downloaded from external sources must be verified against published SHA-256 checksums before use. Checksums must come from the model publisher's official channel.\n",
+          "control": "All model weights downloaded from external sources must be verified against published SHA-256 checksums before use. Checksums must come from the model publisher's official channel.",
           "id": "SC-014",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "NIST AI RMF — MAP 1.1",
             "SLSA Framework — Build Level 1"
           ],
-          "severity": "critical",
-          "title": "Model weights verified against published checksums",
-          "validation": {
-            "evidence_required": "Checksum verification script and verification logs",
-            "type": "automated"
-          }
+          "threat": "Model weights verified against published checksums",
+          "verification": "automated — evidence required: Checksum verification script and verification logs"
         },
         {
           "category": "model-supply-chain",
-          "description": "For each model used, documentation must exist covering: model origin, training data sources, known limitations, safety evaluations performed, and any modifications made since original publication.\n",
+          "control": "For each model used, documentation must exist covering: model origin, training data sources, known limitations, safety evaluations performed, and any modifications made since original publication.",
           "id": "SC-015",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "NIST AI RMF — MAP 1.1",
             "Model Cards for Model Reporting — Mitchell et al."
           ],
-          "severity": "critical",
-          "title": "Model provenance and training data transparency documented",
-          "validation": {
-            "evidence_required": "Model card documentation and provenance records",
-            "type": "manual_review"
-          }
+          "threat": "Model provenance and training data transparency documented",
+          "verification": "manual_review — evidence required: Model card documentation and provenance records"
         }
       ],
       "meta": {
@@ -1389,318 +1416,255 @@
       "items": [
         {
           "category": "os-hardening",
-          "description": "The host or container base image must include only packages required for the harness workload. Development tools, debuggers, and unnecessary services must be removed.\n",
+          "control": "The host or container base image must include only packages required for the harness workload. Development tools, debuggers, and unnecessary services must be removed.",
           "id": "SH-001",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "CIS Benchmark — OS Hardening",
             "NIST SP 800-123 — Server Security"
           ],
-          "severity": "critical",
-          "title": "Minimal base image with no unnecessary packages installed",
-          "validation": {
-            "evidence_required": "Image build Dockerfile and package audit scan results",
-            "type": "automated"
-          }
+          "threat": "Minimal base image with no unnecessary packages installed",
+          "verification": "automated — evidence required: Image build Dockerfile and package audit scan results"
         },
         {
           "category": "os-hardening",
-          "description": "Critical system files and configuration directories must be monitored for unauthorized changes using file integrity monitoring (FIM) tools such as AIDE, Tripwire, or OS-level checksums.\n",
+          "control": "Critical system files and configuration directories must be monitored for unauthorized changes using file integrity monitoring (FIM) tools such as AIDE, Tripwire, or OS-level checksums.",
           "id": "SH-002",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "NIST SP 800-53 — SI-7 Software Integrity",
             "CIS Benchmark — Filesystem Integrity"
           ],
-          "severity": "critical",
-          "title": "Filesystem integrity monitoring enabled",
-          "validation": {
-            "evidence_required": "FIM configuration and baseline integrity report",
-            "type": "automated"
-          }
+          "threat": "Filesystem integrity monitoring enabled",
+          "verification": "automated — evidence required: FIM configuration and baseline integrity report"
         },
         {
           "category": "os-hardening",
-          "description": "Kernel parameters must be set to harden the system: disable IP forwarding unless required, enable SYN cookies, disable source routing, and restrict core dumps.\n",
+          "control": "Kernel parameters must be set to harden the system: disable IP forwarding unless required, enable SYN cookies, disable source routing, and restrict core dumps.",
           "id": "SH-003",
-          "references": [
+          "severity": "high",
+          "sources": [
             "CIS Benchmark — Kernel Parameters",
             "NIST SP 800-53 — SC-3 Security Function Isolation"
           ],
-          "severity": "high",
-          "title": "Kernel parameters hardened via sysctl",
-          "validation": {
-            "evidence_required": "sysctl configuration file and verification script output",
-            "type": "automated"
-          }
+          "threat": "Kernel parameters hardened via sysctl",
+          "verification": "automated — evidence required: sysctl configuration file and verification script output"
         },
         {
           "category": "os-hardening",
-          "description": "Only services required for the harness must be enabled. SSH, cron, and other common services must be disabled or tightly restricted if not strictly needed.\n",
+          "control": "Only services required for the harness must be enabled. SSH, cron, and other common services must be disabled or tightly restricted if not strictly needed.",
           "id": "SH-004",
-          "references": [
+          "severity": "high",
+          "sources": [
             "CIS Benchmark — Service Configuration",
             "NIST SP 800-123 — Server Security"
           ],
-          "severity": "high",
-          "title": "Unnecessary services and daemons disabled",
-          "validation": {
-            "evidence_required": "Service audit results showing only required services active",
-            "type": "automated"
-          }
+          "threat": "Unnecessary services and daemons disabled",
+          "verification": "automated — evidence required: Service audit results showing only required services active"
         },
         {
           "category": "os-hardening",
-          "description": "All files, especially configuration files and secrets, must have restrictive permissions. World-readable and world-writable files must be eliminated. SUID/SGID binaries must be audited and minimized.\n",
+          "control": "All files, especially configuration files and secrets, must have restrictive permissions. World-readable and world-writable files must be eliminated. SUID/SGID binaries must be audited and minimized.",
           "id": "SH-005",
-          "references": [
+          "severity": "high",
+          "sources": [
             "NIST SP 800-53 — AC-3 Access Enforcement",
             "CIS Benchmark — File Permissions"
           ],
-          "severity": "high",
-          "title": "File permissions follow principle of least privilege",
-          "validation": {
-            "evidence_required": "Permission audit scan results and SUID/SGID inventory",
-            "type": "automated"
-          }
+          "threat": "File permissions follow principle of least privilege",
+          "verification": "automated — evidence required: Permission audit scan results and SUID/SGID inventory"
         },
         {
           "category": "os-hardening",
-          "description": "Where supported, UEFI Secure Boot must be enabled. Boot parameters must restrict module loading and protect the boot chain from tampering.\n",
+          "control": "Where supported, UEFI Secure Boot must be enabled. Boot parameters must restrict module loading and protect the boot chain from tampering.",
           "id": "SH-006",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "NIST SP 800-53 — SI-6 Security Function Verification",
             "UEFI Secure Boot specification"
           ],
-          "severity": "medium",
-          "title": "Secure boot chain verified",
-          "validation": {
-            "evidence_required": "Secure Boot status verification and boot parameter documentation",
-            "type": "manual_review"
-          }
+          "threat": "Secure boot chain verified",
+          "verification": "manual_review — evidence required: Secure Boot status verification and boot parameter documentation"
         },
         {
           "category": "network-security",
-          "description": "All network interfaces must use a default-deny firewall policy. Only explicitly required ports and services may be allowed through ingress and egress rules.\n",
+          "control": "All network interfaces must use a default-deny firewall policy. Only explicitly required ports and services may be allowed through ingress and egress rules.",
           "id": "SH-007",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "NIST SP 800-53 — SC-7 Boundary Protection",
             "CIS Benchmark — Firewall Configuration"
           ],
-          "severity": "critical",
-          "title": "Default-deny firewall policy on all interfaces",
-          "validation": {
-            "evidence_required": "Firewall rule set and policy audit results",
-            "type": "automated"
-          }
+          "threat": "Default-deny firewall policy on all interfaces",
+          "verification": "automated — evidence required: Firewall rule set and policy audit results"
         },
         {
           "category": "network-security",
-          "description": "All network communications — API calls, agent-to-harness, harness-to- tool, and dashboard access — must use TLS 1.2 or higher. TLS 1.0 and 1.1 must be disabled.\n",
+          "control": "All network communications — API calls, agent-to-harness, harness-to- tool, and dashboard access — must use TLS 1.2 or higher. TLS 1.0 and 1.1 must be disabled.",
           "id": "SH-008",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "NIST SP 800-52r2 — TLS Guidelines",
             "CIS Benchmark — TLS Configuration"
           ],
-          "severity": "critical",
-          "title": "TLS 1.2+ enforced for all communications",
-          "validation": {
-            "evidence_required": "TLS configuration and SSL Labs scan results",
-            "type": "automated"
-          }
+          "threat": "TLS 1.2+ enforced for all communications",
+          "verification": "automated — evidence required: TLS configuration and SSL Labs scan results"
         },
         {
           "category": "network-security",
-          "description": "Inter-service communication within the harness stack must use mutual TLS (mTLS) or short-lived tokens with rotation. No unauthenticated internal endpoints.\n",
+          "control": "Inter-service communication within the harness stack must use mutual TLS (mTLS) or short-lived tokens with rotation. No unauthenticated internal endpoints.",
           "id": "SH-009",
-          "references": [
+          "severity": "high",
+          "sources": [
             "NIST SP 800-53 — IA-9 Service Identification",
             "OWASP API Security — API1 Broken Object-Level Authorization"
           ],
-          "severity": "high",
-          "title": "Mutual TLS or token-based authentication between services",
-          "validation": {
-            "evidence_required": "mTLS or token configuration and inter-service auth test results",
-            "type": "automated"
-          }
+          "threat": "Mutual TLS or token-based authentication between services",
+          "verification": "automated — evidence required: mTLS or token configuration and inter-service auth test results"
         },
         {
           "category": "network-security",
-          "description": "Agent and harness workloads must use approved DNS resolvers. DNS-over- HTTPS or DNS-over-TLS is preferred. Wildcard or public DNS must not be used for internal resolution.\n",
+          "control": "Agent and harness workloads must use approved DNS resolvers. DNS-over- HTTPS or DNS-over-TLS is preferred. Wildcard or public DNS must not be used for internal resolution.",
           "id": "SH-010",
-          "references": [
+          "severity": "high",
+          "sources": [
             "NIST SP 800-53 — SC-7 Boundary Protection",
             "CIS Benchmark — DNS Configuration"
           ],
-          "severity": "high",
-          "title": "DNS resolution restricted to approved resolvers",
-          "validation": {
-            "evidence_required": "DNS resolver configuration and resolution test results",
-            "type": "automated"
-          }
+          "threat": "DNS resolution restricted to approved resolvers",
+          "verification": "automated — evidence required: DNS resolver configuration and resolution test results"
         },
         {
           "category": "network-security",
-          "description": "The harness environment must be in a separate network segment from production workloads. Network policies must prevent lateral movement between segments.\n",
+          "control": "The harness environment must be in a separate network segment from production workloads. Network policies must prevent lateral movement between segments.",
           "id": "SH-011",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "NIST SP 800-53 — SC-7 Boundary Protection",
             "CIS Benchmark — Network Segmentation"
           ],
-          "severity": "medium",
-          "title": "Network segmentation isolates harness from production",
-          "validation": {
-            "evidence_required": "Network topology diagram and segmentation policy",
-            "type": "manual_review"
-          }
+          "threat": "Network segmentation isolates harness from production",
+          "verification": "manual_review — evidence required: Network topology diagram and segmentation policy"
         },
         {
           "category": "access-control",
-          "description": "Access to the harness dashboard, API, and configuration must be governed by role-based access control (RBAC). No shared or generic accounts.\n",
+          "control": "Access to the harness dashboard, API, and configuration must be governed by role-based access control (RBAC). No shared or generic accounts.",
           "id": "SH-012",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "NIST SP 800-53 — AC-2 Account Management",
             "OWASP ASVS — V1 Access Control"
           ],
-          "severity": "critical",
-          "title": "Role-based access control enforced for all harness users",
-          "validation": {
-            "evidence_required": "RBAC policy configuration and access review results",
-            "type": "automated"
-          }
+          "threat": "Role-based access control enforced for all harness users",
+          "verification": "automated — evidence required: RBAC policy configuration and access review results"
         },
         {
           "category": "access-control",
-          "description": "All administrative access to the harness — dashboard, API, SSH, and configuration management — must require multi-factor authentication (MFA).\n",
+          "control": "All administrative access to the harness — dashboard, API, SSH, and configuration management — must require multi-factor authentication (MFA).",
           "id": "SH-013",
-          "references": [
+          "severity": "critical",
+          "sources": [
             "NIST SP 800-53 — IA-2 Identification and Authentication",
             "NIST SP 800-63B — Digital Identity Guidelines"
           ],
-          "severity": "critical",
-          "title": "Multi-factor authentication required for administrative access",
-          "validation": {
-            "evidence_required": "MFA configuration and enforcement verification",
-            "type": "manual_review"
-          }
+          "threat": "Multi-factor authentication required for administrative access",
+          "verification": "manual_review — evidence required: MFA configuration and enforcement verification"
         },
         {
           "category": "access-control",
-          "description": "All service accounts used by the harness or agent must use short-lived credentials (e.g., tokens with TTL ≤ 1 hour). Credentials must be rotated automatically. No long-lived API keys.\n",
+          "control": "All service accounts used by the harness or agent must use short-lived credentials (e.g., tokens with TTL ≤ 1 hour). Credentials must be rotated automatically. No long-lived API keys.",
           "id": "SH-014",
-          "references": [
+          "severity": "high",
+          "sources": [
             "NIST SP 800-53 — IA-5 Authenticator Management",
             "OWASP ASVS — V2 Authentication"
           ],
-          "severity": "high",
-          "title": "Service accounts use short-lived credentials with rotation",
-          "validation": {
-            "evidence_required": "Service account credential configuration and rotation logs",
-            "type": "automated"
-          }
+          "threat": "Service accounts use short-lived credentials with rotation",
+          "verification": "automated — evidence required: Service account credential configuration and rotation logs"
         },
         {
           "category": "access-control",
-          "description": "Any operation that modifies harness configuration, deploys new agents, or accesses sensitive data must go through an approval workflow with at least one additional reviewer.\n",
+          "control": "Any operation that modifies harness configuration, deploys new agents, or accesses sensitive data must go through an approval workflow with at least one additional reviewer.",
           "id": "SH-015",
-          "references": [
+          "severity": "high",
+          "sources": [
             "NIST SP 800-53 — AC-3 Access Enforcement",
             "OWASP ASVS — V1 Architecture"
           ],
-          "severity": "high",
-          "title": "Privileged operations require approval workflow",
-          "validation": {
-            "evidence_required": "Approval workflow configuration and recent audit trail",
-            "type": "manual_review"
-          }
+          "threat": "Privileged operations require approval workflow",
+          "verification": "manual_review — evidence required: Approval workflow configuration and recent audit trail"
         },
         {
           "category": "access-control",
-          "description": "Dashboard and API sessions must have configurable timeouts. Idle sessions must be disconnected after a defined period. No indefinite sessions.\n",
+          "control": "Dashboard and API sessions must have configurable timeouts. Idle sessions must be disconnected after a defined period. No indefinite sessions.",
           "id": "SH-016",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "NIST SP 800-53 — AC-12 Session Termination",
             "OWASP ASVS — V3 Session Management"
           ],
-          "severity": "medium",
-          "title": "Session timeouts and idle disconnect enforced",
-          "validation": {
-            "evidence_required": "Session timeout configuration and test results",
-            "type": "automated"
-          }
+          "threat": "Session timeouts and idle disconnect enforced",
+          "verification": "automated — evidence required: Session timeout configuration and test results"
         },
         {
           "category": "container-security",
-          "description": "All harness and agent containers must run as non-root users with all Linux capabilities dropped except those explicitly required. No privileged containers in production.\n",
+          "control": "All harness and agent containers must run as non-root users with all Linux capabilities dropped except those explicitly required. No privileged containers in production.",
           "id": "SH-017",
-          "references": [
-            "CIS Docker Benchmark — Container Runtime",
-            "NIST SP 800-190 — Container Security"
-          ],
           "severity": "critical",
-          "title": "Containers run as non-root with dropped capabilities",
-          "validation": {
-            "evidence_required": "Container security policy and runtime scan results",
-            "type": "automated"
-          }
-        },
-        {
-          "category": "container-security",
-          "description": "Agent containers must use a read-only root filesystem. Any writable paths must be explicitly declared as tmpfs or volume mounts.\n",
-          "id": "SH-018",
-          "references": [
+          "sources": [
             "CIS Docker Benchmark — Container Runtime",
             "NIST SP 800-190 — Container Security"
           ],
-          "severity": "high",
-          "title": "Read-only root filesystem for agent containers",
-          "validation": {
-            "evidence_required": "Container filesystem configuration and verification",
-            "type": "automated"
-          }
+          "threat": "Containers run as non-root with dropped capabilities",
+          "verification": "automated — evidence required: Container security policy and runtime scan results"
         },
         {
           "category": "container-security",
-          "description": "All container images must pass vulnerability scanning before deployment. Critical and high CVEs must be resolved or formally accepted before the image is promoted to production.\n",
+          "control": "Agent containers must use a read-only root filesystem. Any writable paths must be explicitly declared as tmpfs or volume mounts.",
+          "id": "SH-018",
+          "severity": "high",
+          "sources": [
+            "CIS Docker Benchmark — Container Runtime",
+            "NIST SP 800-190 — Container Security"
+          ],
+          "threat": "Read-only root filesystem for agent containers",
+          "verification": "automated — evidence required: Container filesystem configuration and verification"
+        },
+        {
+          "category": "container-security",
+          "control": "All container images must pass vulnerability scanning before deployment. Critical and high CVEs must be resolved or formally accepted before the image is promoted to production.",
           "id": "SH-019",
-          "references": [
+          "severity": "high",
+          "sources": [
             "NIST SP 800-190 — Container Security",
             "CIS Benchmark — Image Scanning"
           ],
-          "severity": "high",
-          "title": "Container images scanned for vulnerabilities before deployment",
-          "validation": {
-            "evidence_required": "Vulnerability scan reports and exception tracking",
-            "type": "automated"
-          }
+          "threat": "Container images scanned for vulnerabilities before deployment",
+          "verification": "automated — evidence required: Vulnerability scan reports and exception tracking"
         },
         {
           "category": "container-security",
-          "description": "Every container must run under a seccomp profile that blocks unnecessary syscalls and an AppArmor profile that restricts file and capability access. Default Docker profiles are not sufficient.\n",
+          "control": "Every container must run under a seccomp profile that blocks unnecessary syscalls and an AppArmor profile that restricts file and capability access. Default Docker profiles are not sufficient.",
           "id": "SH-020",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "CIS Docker Benchmark — Container Runtime",
             "NIST SP 800-190 — Container Security"
           ],
-          "severity": "medium",
-          "title": "Seccomp and AppArmor profiles applied to all containers",
-          "validation": {
-            "evidence_required": "Seccomp and AppArmor profile configurations and test results",
-            "type": "automated"
-          }
+          "threat": "Seccomp and AppArmor profiles applied to all containers",
+          "verification": "automated — evidence required: Seccomp and AppArmor profile configurations and test results"
         },
         {
           "category": "container-security",
-          "description": "Every container must have CPU and memory limits set. No container may request unlimited resources. Limits must prevent a single agent from exhausting host resources.\n",
+          "control": "Every container must have CPU and memory limits set. No container may request unlimited resources. Limits must prevent a single agent from exhausting host resources.",
           "id": "SH-021",
-          "references": [
+          "severity": "medium",
+          "sources": [
             "NIST SP 800-53 — SC-5 Denial of Service Protection",
             "CIS Docker Benchmark — Resource Limits"
           ],
-          "severity": "medium",
-          "title": "Container resource limits prevent resource exhaustion",
-          "validation": {
-            "evidence_required": "Resource limit configuration and stress test results",
-            "type": "automated"
-          }
+          "threat": "Container resource limits prevent resource exhaustion",
+          "verification": "automated — evidence required: Resource limit configuration and stress test results"
         }
       ],
       "meta": {
@@ -2444,6 +2408,10 @@
       "content": "# Protocol: Secure AI Agent Deployment\n\n| Field | Value |\n|---|---|\n| **Version** | 1.0.0 |\n| **Status** | Active |\n| **Frameworks** | CUSTODY, NIST AI RMF, OWASP Agentic AI, LASM, DORA 2025 |\n\n---\n\n## Purpose\n\nDefine a repeatable, auditable procedure for deploying an autonomous or semi-autonomous AI agent into any environment. The protocol ensures that every deployment carries enforceable authorization, explicit scope boundaries, supervision gates, and rollback capability before the agent receives live credentials or network access.\n\nAn AI agent can be manipulated, compromised, or wrong. Its environment must prevent a bad decision from becoming an unrestricted system action. This protocol operationalises that principle across all six CUSTODY pillars and all seven LASM layers.\n\n**References:**\n\n- CUSTODY Framework — Conditions of Release, Supervision, Traceability, Yield\n- NIST AI RMF 1.0 — GOVERN, MAP, MEASURE, MANAGE functions\n- NIST AI 600-1 — Generative AI risk profile\n- OWASP Top 10 for LLM Applications — LLM01, LLM06\n- OWASP Agentic AI — Excessive Agency, Tool Abuse\n- LASM — L1 Foundation through L7 Governance\n- DORA 2025 — CI/CD stability, deployment automation\n\n---\n\n## Scope\n\nThis protocol covers **every** deployment of an AI agent that can read data, invoke tools, execute code, call APIs, or initiate business processes. It applies to:\n\n- New agent deployments\n- Updated agent versions or configuration changes\n- Agent deployments to new environments (dev, staging, production)\n- Multi-agent systems where agents delegate to or coordinate with other agents\n\nIt does **not** cover the initial development of the agent model itself (see *harness-setup.md* for the secure development environment).\n\n---\n\n## Phase 1 — Pre-Deployment Authorization\n\nBefore any infrastructure is provisioned or credentials issued, the deployment must pass an authorization gate.\n\n### Step 1.1: Define the Authorization Artifact\n\nProduce a machine-readable authorization artifact that specifies:\n\n| Element | Required |\n|---|---|\n| Agent identity (name, version, image hash) | Yes |\n| Permitted tools and APIs (explicit allowlist) | Yes |\n| Permitted data sources and destinations | Yes |\n| Scope boundaries (task, time window, data domain) | Yes |\n| Impact classification (low / medium / high / critical) | Yes |\n| Human operator responsible for the deployment | Yes |\n| Start and end conditions | Yes |\n| Re-authorization criteria for scope changes | Yes |\n\n> **CUSTODY:** Conditions of Release (AC-001, AC-002, AC-003, AC-004)\n> **NIST AI RMF:** GOVERN 1.3, MAP 1.5\n> **LASM:** L7 Governance\n\n### Step 1.2: Risk and Impact Assessment\n\n1. Classify the agent's maximum potential impact using the CUSTODY impact taxonomy:\n   - **Low** — Read-only, no external network access\n   - **Medium** — Write access to non-critical systems, limited egress\n   - **High** — Write access to production data or infrastructure\n   - **Critical** — Can modify security controls, credentials, or financial systems\n2. For **High** and **Critical** impact agents, require a formal risk assessment signed by the responsible operator and a security reviewer.\n3. Document all trust relationships the agent will participate in (other agents, APIs, services).\n\n> **NIST AI RMF:** MAP 1.1, MAP 1.5, MAP 2.3\n> **OWASP:** LLM06-Excessive Agency\n> **DORA 2025:** Risk-informed deployment decisions\n\n### Step 1.3: Threat Model Review\n\n1. Review the agent threat model (see `docs/threat-model.md`) against the proposed deployment.\n2. Identify which LASM layers are exposed: L1 Foundation, L2 Cognitive, L3 Memory, L4 Tool Execution, L5 Integration, L6 Environment, L7 Governance.\n3. For each exposed layer, confirm that at least one CUSTODY control is active.\n4. Document residual risks and accepted risks in the deployment record.\n\n> **LASM:** Full-layer threat review\n> **CUSTODY:** All six pillars\n> **OWASP:** LLM01-Prompt Injection, LLM06-Excessive Agency\n\n---\n\n## Phase 2 — Environment Hardening\n\n### Step 2.1: Provision Isolated Runtime\n\n1. Deploy the agent into an ephemeral sandbox environment (container or VM).\n2. Apply immutable image — agent runtime is read-only; no persistent filesystem writes persist across restarts.\n3. Set `no-new-privileges`, drop Linux capabilities, enforce SELinux/AppArmor policy.\n4. Network micro-segmentation: the agent can reach only explicitly allowlisted services.\n5. Default-deny egress — all outbound traffic routes through an allowlisted proxy/gateway.\n\n> **CUSTODY:** Operational Controls (AC-018, AC-019, AC-020), Yield (AC-023, AC-024)\n> **LASM:** L6 Environment\n> **NIST AI RMF:** MANAGE 2.3\n\n### Step 2.2: Configure Credential Broker\n\n1. Issue credentials through a secret broker only — no hardcoded tokens, no shared service accounts.\n2. Credentials must be scoped (least privilege), time-limited (auto-expire on task completion or after a maximum TTL), and auto-rotated.\n3. Agent identity must be separate from other agents and from human operators.\n4. Confirm the agent cannot read credentials belonging to other agents or users.\n\n> **CUSTODY:** Operational Controls (AC-016), Dependency (AC-021)\n> **LASM:** L5 Integration, L6 Environment\n\n### Step 2.3: Configure Supervision Gates\n\n1. For **High** and **Critical** impact agents, configure human-in-the-loop approval gates for every action that modifies production state.\n2. For **Medium** impact agents, configure approval gates for any action that exceeds a defined threshold (number of records affected, financial value, scope change).\n3. Approval gates must be enforced by an external policy engine — not by agent logic that the agent can modify.\n4. Log all approval requests and outcomes to the immutable audit trail.\n\n> **CUSTODY:** Supervision (AC-009, AC-010, AC-011)\n> **LASM:** L7 Governance\n> **NIST AI RMF:** GOVERN 1.3\n\n### Step 2.4: Configure Untrusted Input Handling\n\n1. Separate the instruction channel from the data channel in agent context.\n2. System instructions must take precedence over user input (instruction hierarchy enforcement).\n3. Retrieved or ingested content must be parsed in an isolated context.\n4. Test with known prompt-injection payloads before granting live access.\n\n> **CUSTODY:** Untrusted Input (AC-005, AC-006)\n> **OWASP:** LLM01-Prompt Injection\n> **LASM:** L4 Tool Execution\n\n---\n\n## Phase 3 — Logging and Traceability\n\n### Step 3.1: Configure Immutable Audit Logging\n\n1. All agent actions (tool calls, API requests, data accesses, delegation events) must be logged to an immutable append-only store.\n2. Each log entry must carry: trace ID, session ID, task ID, agent ID, operator ID, timestamp, action, parameters, and outcome.\n3. The agent must not be able to write to, modify, or delete its own audit trail.\n4. Separation of duties: the agent runtime, the approval engine, and the log store are separate systems.\n\n> **CUSTODY:** Traceability (AC-013, AC-014, AC-015)\n> **NIST AI RMF:** GOVERN 1.7\n> **LASM:** L7 Governance\n\n### Step 3.2: Configure Memory Controls\n\n1. If the agent uses session or long-term memory, apply write controls, source labeling, and retention limits.\n2. Memory entries must carry provenance metadata (source, timestamp, confidence).\n3. Retention policies must be enforced — stale entries are pruned on schedule.\n4. Memory writes from untrusted sources must be flagged and quarantined.\n\n> **CUSTODY:** Untrusted Input (AC-008)\n> **LASM:** L3 Memory\n\n---\n\n## Phase 4 — Operational Controls\n\n### Step 4.1: Configure Rate Limits and Circuit Breakers\n\n1. Set maximum tool calls per task.\n2. Set maximum execution time per task.\n3. Set maximum token budget per task.\n4. Set maximum recursion depth.\n5. Configure circuit breakers that activate on repeated failures (N consecutive failures → pause and escalate to operator).\n\n> **CUSTODY:** Operational Controls (AC-017)\n> **OWASP Agentic AI:** Tool abuse prevention\n\n### Step 4.2: Configure Goal Specification and Stop Conditions\n\n1. Each task must have an explicit goal specification with measurable success criteria.\n2. Define explicit stop conditions: time limit, error threshold, uncertainty threshold, scope boundary hit.\n3. The agent must halt and escalate to the operator when any stop condition is met.\n4. Confidence thresholds: if the agent's confidence in its next action falls below a defined level, it must pause and request guidance.\n\n> **CUSTODY:** Supervision (AC-012)\n> **LASM:** L2 Cognitive\n\n### Step 4.3: Configure Delegation Controls\n\n1. If the agent can delegate to other agents, all delegation events must be logged with delegator ID, delegate ID, action, and authorization.\n2. Delegation must not bypass approval gates — the delegate is subject to the same authorization constraints.\n3. Chain-of-action tracing must be maintained across delegation boundaries.\n\n> **CUSTODY:** Traceability (AC-014), Dependency (AC-021)\n> **LASM:** L5 Integration\n\n---\n\n## Phase 5 — Pre-Live Verification\n\n### Step 5.1: Checklist Run\n\nRun the **Agent Containment Checklist** (`checklists/agent-containment.yaml`) against the deployment configuration. Every `critical` control must pass. Every `high` control must either pass or have a documented accepted risk.\n\n> **CUSTODY:** Full checklist\n> **NIST AI RMF:** MEASURE function\n\n### Step 5.2: Automated Security Tests\n\n1. **Prompt injection test suite** — Run known prompt-injection payloads against the agent and verify that instruction hierarchy holds.\n2. **Scope boundary test** — Attempt actions outside the authorized scope and verify they are blocked at the infrastructure level.\n3. **Credential isolation test** — Verify the agent cannot read credentials belonging to other agents or users.\n4. **Egress test** — Verify the agent cannot reach non-allowlisted network destinations.\n5. **Privilege escalation test** — Verify the agent cannot gain root or admin privileges.\n6. **Persistence test** — Verify the agent cannot create scheduled tasks, modify startup scripts, or install system packages.\n7. **Audit integrity test** — Verify the agent cannot modify or delete its own audit trail.\n\n> **CUSTODY:** All pillars\n> **LASM:** All layers\n> **OWASP:** LLM01, LLM06\n\n### Step 5.3: Operator Sign-Off\n\n1. The responsible human operator reviews and signs off on:\n   - The authorization artifact\n   - The risk assessment\n   - The checklist results\n   - The test results\n2. Sign-off is recorded in the deployment record with timestamp and operator identity.\n3. For **Critical** impact agents, a second security reviewer must also sign off.\n\n> **NIST AI RMF:** GOVERN 1.3\n> **CUSTODY:** Supervision (AC-009)\n\n---\n\n## Phase 6 — Go-Live\n\n### Step 6.1: Deploy with Monitoring\n\n1. Deploy the agent to the production environment with all controls active.\n2. Enable real-time monitoring dashboards for: action rate, error rate, approval request rate, scope boundary hits, and circuit-breaker activations.\n3. Set alerts for: scope boundary violations, credential access anomalies, unexpected egress, audit log gaps, and rate-limit thresholds.\n\n> **CUSTODY:** Operational Controls (AC-017), Traceability (AC-013)\n> **NIST AI RMF:** MANAGE function\n> **DORA 2025:** Monitoring and observability\n\n### Step 6.2: Verify Controls in Production\n\n1. Re-run a subset of security tests against the live deployment.\n2. Confirm that all controls that were verified in staging are still active in production.\n3. Confirm monitoring and alerting are functional.\n\n> **NIST AI RMF:** MEASURE function\n> **DORA 2025:** Continuous verification\n\n---\n\n## Phase 7 — Ongoing Operations\n\n### Step 7.1: Continuous Monitoring\n\n1. Monitor agent actions against the authorization artifact — flag any drift.\n2. Review audit logs on a schedule defined by impact classification:\n   - **Critical**: continuous automated review + daily human review\n   - **High**: daily automated review + weekly human review\n   - **Medium**: weekly automated review + monthly human review\n   - **Low**: monthly automated review\n3. Track and review all scope-change requests.\n\n> **NIST AI RMF:** MANAGE function\n> **CUSTODY:** Supervision, Traceability\n\n### Step 7.2: Incident Escalation\n\nIf a security event occurs during operation, follow the **Incident Response Protocol** (`protocols/incident-response.md`).\n\n> **Cross-reference:** incident-response.md\n\n### Step 7.3: Decommissioning\n\nWhen the agent's task is complete or the deployment window closes:\n\n1. Revoke all credentials immediately.\n2. Destroy the sandbox environment — do not reuse for a different task.\n3. Archive audit logs per retention policy.\n4. Conduct a post-deployment review: did the agent stay within scope? Were there any near-misses?\n5. Update the threat model if new attack vectors were discovered.\n\n> **CUSTODY:** Yield (AC-024, AC-025)\n> **LASM:** L6 Environment\n\n---\n\n## Verification\n\n| Gate | Verification Method | Pass Criteria |\n|---|---|---|\n| Authorization artifact | Review | Exists, complete, signed |\n| Risk assessment | Review | Completed, signed, residual risks documented |\n| Environment hardening | Automated test suite | All tests pass |\n| Checklist run | `checklist_run agent-containment` | All critical items pass; high items pass or have accepted risk |\n| Security tests | Automated test suite | All 7 test categories pass |\n| Operator sign-off | Deployment record | Recorded with timestamp and identity |\n| Production verification | Automated test suite (subset) | Controls confirmed active |\n| Monitoring | Dashboard check | Dashboards and alerts functional |\n\n---\n\n## Rollback\n\nIf any gate fails, or if a security event occurs during deployment:\n\n1. **Immediate halt** — Trigger the agent's stop conditions. If the agent does not halt, the policy engine forces termination.\n2. **Credential revocation** — All credentials issued to the agent are revoked immediately.\n3. **Environment destruction** — The sandbox environment is destroyed and recreated from a trusted image.\n4. **Audit log preservation** — All audit logs are preserved and write-protected before environment destruction.\n5. **Root cause analysis** — Conduct using the preserved audit trail.\n6. **Re-deployment** — After root cause is addressed, repeat from Phase 1. Do not skip phases.\n\n> **CUSTODY:** Yield (AC-024), Supervision (AC-011)\n> **DORA 2025:** Rollback capability for every deployment",
       "title": "Protocol: Secure AI Agent Deployment"
     },
+    "evidence-collect": {
+      "content": "# Protocol: Out-of-Band Evidence Collection for Agent Environment Audit\n\n| Field | Value |\n|---|---|\n| **Version** | 1.0.0 |\n| **Status** | Active |\n| **Frameworks** | CUSTODY, NIST AI RMF, OWASP Agentic AI, LASM, DORA 2025 |\n\n---\n\n## Purpose\n\nAn AI agent that audits the host it runs on is a **self-audit**: the auditor\nand the audited are the same actor. A compromised or simply wrong agent can\nmark every control \"pass\" without verifying it. This protocol removes that\nconflict of interest by collecting environment evidence **out of band** —\nfrom the host, not from the agent — and emitting a signed JSON bundle an\nexternal auditor (a human, a separate agent, or a separate MCP server)\nconsumes instead of trusting the running agent's narrative.\n\nIt pairs with the `agent-environment.yaml` checklist (AE-001 through AE-011).\nEach evidence field maps to one or more AE controls.\n\n**References:**\n\n- CUSTODY Framework — Operational Controls, Traceability, Yield, Dependency\n- NIST AI RMF 1.0 — MEASURE function (independent verification)\n- OWASP Agentic AI — Excessive Agency, self-attestation limits\n- LASM — L6 Environment layer\n- DORA 2025 — auditability of automated processes\n\n## Prerequisites\n\n- The collector runs as an identity **independent of the agent** — a sidecar,\n  a CI runner, a human operator, or a separate privileged process. It must not\n  share the agent's credentials, filesystem namespace, or network policy.\n- A signing key available only to the collector (not to the agent), e.g. an\n  age/GPG/cosign key or a KMS-backed key, to produce a detached signature.\n- `jq` and the standard host inspection tools (`id`, `getcap`, `aa-status`,\n  `iptables`/`nft`, `findmnt`, `systemctl`, `cat /proc/...`).\n\n## Steps\n\n1. **Record collector identity and provenance** — Capture who is collecting,\n   where, and when (ISO-8601 UTC, from the collector's clock, not the agent's):\n   ```json\n   { \"collector\": \"<name>\", \"host\": \"<hostname>\", \"collected_at\": \"<UTC>\", \"agent_unit\": \"<systemd unit / container id>\" }\n   ```\n\n2. **Identity & privilege (AE-001, AE-002)** — Record the agent process's UID/GID\n   and `NO_NEW_PRIVS`:\n   - `id -u <agent-user>`; the effective UID of the agent process.\n   - `systemctl show <agent-unit> | grep -i NoNewPrivileges` (or the container's\n     `no-new-privileges` flag).\n   - `getcap -r / 2>/dev/null` — file capabilities that could bypass the\n     bounding set.\n   - `/proc/<pid>/status` lines `CapBnd`, `CapEff`, `CapPrm`, `CapInh`.\n\n3. **Mandatory access control (AE-003, AE-004)** — Record the confinement\n   posture:\n   - `aa-status` (profiles loaded + mode: enforce vs complain).\n   - `ps -Z <pid>` (SELinux label) or `ps -p <pid> -o apparmor` (AppArmor\n     profile).\n   - The seccomp mode: `/proc/<pid>/status | grep Seccomp` (2 = filter).\n\n4. **Network & egress (AE-005, AE-006)** — Record the egress policy:\n   - `iptables -L OUTPUT -n -v` (or `nft list ruleset`).\n   - A connectivity probe to a non-allowlisted host — it must **fail**.\n   - A probe to the cloud metadata endpoint (`169.254.169.254`) — it must\n     **fail** for the agent namespace.\n\n5. **Audit logging (AE-007)** — Record where audit events land:\n   - The audit/log destination (remote syslog, object store) and whether the\n     agent UID can write to it (it must not be able to).\n   - `find /var/log -user <agent-user>` — must be empty.\n\n6. **Secrets delivery (AE-008)** — Record how secrets are materialized:\n   - Whether a broker/vault is the source; token TTL at collection time.\n   - `grep -RIn -E '(AKIA|ghp_|xoxb|-----BEGIN)' /proc/<pid>/environ` and the\n     agent's env — must be empty (no static long-lived secrets).\n\n7. **Image & artifact provenance (AE-009)** — Record the image attestation:\n   - Image digest and signature verification result (`cosign verify` or\n     equivalent).\n   - Presence and hash of the SBOM/AIBOM; the running digest matches the\n     signed digest.\n\n8. **Filesystem state (AE-010)** — Record mount options:\n   - `findmnt -o TARGET,FSTYPE,OPTIONS` — root and system paths mounted\n     read-only; only the working directory is writable and it is `tmpfs`.\n\n9. **Runtime limits (AE-011)** — Record the cgroup limits:\n   - `systemctl show <unit> | grep -iE 'CPU|Memory|Tasks|Limit'` or\n     `cat /sys/fs/cgroup/<path>/{cpu.max,memory.max,pids.max}`.\n   - The configured execution timeout.\n\n10. **Emit and sign the bundle** — Assemble all captured fields into a single\n    JSON object keyed by AE control, write it to\n    `agent-environment-evidence.json`, and produce a **detached signature** with\n    the collector's key:\n    ```sh\n    jq -S . agent-environment-evidence.json > agent-environment-evidence.canonical.json\n    <signer> sign --key <collector-key> agent-environment-evidence.canonical.json \\\n      > agent-environment-evidence.sig\n    ```\n    The signature is over the **canonical (sorted-key) JSON** so verification is\n    reproducible.\n\n## Verification\n\nAn external auditor consumes the bundle by:\n\n1. Verifying the detached signature against the collector's **public** key\n   (which the auditor obtained independently, not via the agent).\n2. Checking `collector` is an identity distinct from the agent and that\n   `collected_at` is recent and from the collector's clock.\n3. For each AE control, evaluating the captured field against the control's\n   `verification` criterion in `agent-environment.yaml` and recording pass/fail\n   with the evidence reference.\n\nA control passes only when the **captured host evidence** satisfies the\ncriterion — never when the agent asserts it does.\n\n## Rollback\n\nEvidence collection is read-only; no host state changes. If a probe side-effect\nis undesirable (e.g. a deliberate failed connection to a non-allowlisted host\nappears in logs), note it in the bundle under `probes` so the auditor can\ndistinguish probe noise from real traffic.\n\n## Separation of Duties (binding rule)\n\n- An agent running on host X **must not** self-audit host X via the\n  `agent-audit` skill by default. It consumes a signed `agent-environment-\n  evidence.json` produced by an independent collector.\n- The `agent-audit` skill refuses a self-audit unless `--self-audit` is\n  explicitly passed; a self-audit result is labeled **advisory only** and never\n  treated as verified evidence.\n- Evidence older than a defined freshness window (e.g. 24 hours, set per\n  deployment) is invalid; the auditor must request a fresh collection.",
+      "title": "Protocol: Out-of-Band Evidence Collection for Agent Environment Audit"
+    },
     "harness-setup": {
       "content": "# Protocol: Secure AI Development Harness Setup\n\n| Field | Value |\n|---|---|\n| **Version** | 1.0.0 |\n| **Status** | Active |\n| **Frameworks** | CUSTODY, NIST AI RMF, OWASP, LASM, DORA 2025 |\n\n---\n\n## Purpose\n\nDefine the procedure for setting up a secure development harness — the controlled environment where AI-assisted or AI-autonomous development takes place. The development harness is the first and most critical layer of defense: if the environment where AI writes, reviews, or deploys code is compromised, all downstream controls are undermined.\n\nResearch shows that while 47.5% of AI-generated code may be functionally correct, only 8.25% is also secure ([ICLR 2026 vibe-coding benchmark](https://openreview.net/forum?id=rs6rRCEixQ)). Functional correctness ≠ security. The harness must enforce this distinction at the infrastructure level, not rely on the model's judgment.\n\nThis protocol operationalizes that principle, mapping each setup step to CUSTODY pillars, LASM layers, and NIST AI RMF functions.\n\n**References:**\n\n- CUSTODY Framework — Conditions of Release, Operational Controls, Yield\n- NIST AI RMF 1.0 — GOVERN, MAP, MEASURE, MANAGE functions\n- NIST AI 600-1 — Secure development practices for GenAI\n- CISA Guidelines for Secure AI System Development\n- OWASP Top 10 for LLM Applications — LLM01, LLM02, LLM06\n- OWASP Agentic AI — Agent development controls\n- LASM — L1 Foundation, L4 Tool Execution, L6 Environment, L7 Governance\n- DORA 2025 — CI/CD stability, deployment automation, change failure rate\n- AI Harness Scorecard — Engineering safeguards for AI-assisted development\n\n---\n\n## Scope\n\nThis protocol covers the setup of a **secure development harness** — the environment where:\n\n- AI agents write, review, test, and deploy code\n- AI agents interact with version control, CI/CD pipelines, and cloud infrastructure\n- Developers use AI-assisted coding tools (copilots, code generators, autonomous agents)\n- AI agents manage infrastructure, configuration, or operational tasks\n\nIt applies to:\n\n- Local development machines\n- Cloud development environments (CDEs, dev containers)\n- CI/CD pipelines where AI agents have write access\n- Staging and testing environments where AI agents operate\n\nIt does **not** cover:\n\n- Production deployment environments (see `protocols/agent-deployment.md`)\n- Production incident response (see `protocols/incident-response.md`)\n\n---\n\n## Phase 1 — Foundation and Model Integrity\n\n### Step 1.1: Verify Model Provenance\n\nBefore loading any AI model into the harness, verify its integrity and provenance.\n\n1. **Obtain model from a trusted source** — Official distribution channel, verified repository, or trusted model hub.\n2. **Verify integrity hashes** — Compare SHA-256 hashes against published values. Do not load models with hash mismatches.\n3. **Verify model signatures** — If the model provider signs artifacts, verify the signature at load time.\n4. **Maintain an AI Bill of Materials (AIBOM)** — Document the model name, version, source, hash, signature, and all dependencies (tokenizer, config, license, safety filters).\n5. **Pin model versions** — Never use `latest` tags in production harness configurations. Pin to a specific version and hash.\n\n> **CUSTODY:** Untrusted Input (AC-007)\n> **LASM:** L1 Foundation\n> **NIST AI RMF:** MAP 2.3 — Supply chain risk management\n> **ETSI GR SAI 005:** Model integrity verification\n\n### Step 1.2: Configure Model Safety Filters\n\n1. **Enable available safety filters** — content filters, output classifiers, and refusal mechanisms provided by the model vendor.\n2. **Configure guardrails** — Define input and output constraints appropriate for the development context:\n   - Input: Block known injection patterns, enforce length limits, validate format.\n   - Output: Block code patterns that match known vulnerabilities, enforce style and security rules.\n3. **Test safety filters** — Run a validation suite of known-bad inputs and verify they are blocked or flagged.\n4. **Document filter configuration** — Record which filters are active and their settings in the harness configuration.\n\n> **OWASP:** LLM01-Prompt Injection\n> **NIST AI 600-1:** Content provenance and safety\n\n### Step 1.3: Establish Instruction Hierarchy\n\n1. **Define instruction priority order** — System instructions > developer instructions > tool results > user input.\n2. **Implement instruction hierarchy in the runtime** — Not just in the prompt, but in the agent framework's context handling:\n   - System prompt is injected at the highest priority and cannot be overridden.\n   - Developer instructions are injected at the next priority.\n   - User input and tool results are treated as untrusted data.\n3. **Test instruction hierarchy** — Attempt prompt injection via user input and verify that system instructions take precedence.\n4. **Document instruction hierarchy** — Record the priority order and enforcement mechanism in the harness configuration.\n\n> **CUSTODY:** Untrusted Input (AC-005, AC-006)\n> **OWASP:** LLM01-Prompt Injection\n> **LASM:** L4 Tool Execution\n\n---\n\n## Phase 2 — Environment Hardening\n\n### Step 2.1: Provision Isolated Development Environment\n\n1. **Use ephemeral, immutable environments** — Containers or VMs that are destroyed and recreated from trusted images. No persistent state between sessions.\n2. **Apply principle of least privilege** — The AI agent runs as a dedicated non-root user with minimal capabilities.\n3. **Set `no-new-privileges`** — Prevent privilege escalation via setuid binaries.\n4. **Drop Linux capabilities** — Remove all capabilities except those explicitly required.\n5. **Enforce SELinux or AppArmor policy** — Confine the agent to specific file paths, network endpoints, and system calls.\n6. **Use read-only filesystem for system paths** — `/usr`, `/etc`, `/bin` are mounted read-only. Only designated workspace paths are writable.\n\n> **CUSTODY:** Operational Controls (AC-018), Yield (AC-023, AC-024)\n> **LASM:** L6 Environment\n> **DORA 2025:** Immutable infrastructure\n\n### Step 2.2: Configure Network Controls\n\n1. **Default-deny egress** — All outbound network traffic is blocked unless explicitly allowed.\n2. **Allowlist required endpoints** — Only the specific endpoints the agent needs:\n   - Model API endpoints (if using remote inference)\n   - Package registries (PyPI, npm, etc.) — specific domains only\n   - Version control (Git) — specific organizations/repos only\n   - CI/CD endpoints — specific pipelines only\n3. **Block all other egress** — No direct internet access, no arbitrary URLs.\n4. **Configure DLP inspection** — Inspect outbound traffic for sensitive data patterns (API keys, credentials, PII, internal URLs).\n5. **Configure a host firewall** — Deny all inbound traffic except the specific ports needed for development (SSH, HTTP for local dev servers).\n\n> **CUSTODY:** Operational Controls (AC-019, AC-020)\n> **LASM:** L6 Environment\n> **OWASP:** LLM02-Sensitive Info Disclosure\n\n### Step 2.3: Configure Credential Management\n\n1. **Use a secret broker** — All credentials are obtained through a secret broker (HashiCorp Vault, AWS Secrets Manager, etc.). No hardcoded credentials, no `.env` files with real secrets.\n2. **Scope credentials to minimum privilege** — Each credential grants access only to the specific resource the agent needs, for the minimum time required.\n3. **Use short-lived, auto-rotating credentials** — Maximum TTL of 1 hour for development credentials. Auto-rotate on expiration.\n4. **Separate agent identity from human identity** — The agent has its own identity and credentials, separate from the developer's.\n5. **Never share credentials across agents** — Each agent instance has its own scoped credentials.\n6. **Revoke credentials on session end** — When the agent session ends, all credentials are immediately revoked.\n\n> **CUSTODY:** Operational Controls (AC-016), Dependency (AC-021)\n> **LASM:** L5 Integration, L6 Environment\n> **DORA 2025:** Secret management best practices\n\n---\n\n## Phase 3 — Tool and Integration Controls\n\n### Step 3.1: Configure Tool Allowlist\n\n1. **Enumerate permitted tools** — Create an explicit allowlist of tools the agent may invoke: shell commands, API endpoints, file operations, network requests.\n2. **Block everything not on the allowlist** — The default is deny. The agent cannot invoke any tool, command, or API that is not explicitly permitted.\n3. **Implement the allowlist at the infrastructure level** — Not in the agent's prompt, but in the policy engine, shell configuration, and network firewall.\n4. **Review the allowlist regularly** — At minimum, review when the agent's task changes and during security reviews.\n\n> **CUSTODY:** Conditions of Release (AC-003), Operational Controls (AC-017)\n> **LASM:** L4 Tool Execution, L7 Governance\n\n### Step 3.2: Configure Tool Execution Controls\n\n1. **Rate limits** — Maximum tool calls per task, per minute, and per session.\n2. **Timeout rules** — Maximum execution time per tool call and per task.\n3. **Recursion limits** — Maximum depth of tool-chaining (tool A → tool B → tool A).\n4. **Circuit breakers** — After N consecutive failures, pause execution and escalate to the human operator.\n5. **Token budgets** — Maximum token consumption per task to prevent resource exhaustion.\n\n> **CUSTODY:** Operational Controls (AC-017)\n> **OWASP Agentic AI:** Tool abuse prevention\n\n### Step 3.3: Configure Version Control Controls\n\n1. **Read-only access for unreviewed changes** — The agent can write code, but cannot push to protected branches without human review.\n2. **Branch protection rules** — Require human approval for all merges to main/release branches. AI approvals do not satisfy this requirement.\n3. **Commit signing** — All commits are signed with the agent's dedicated key. Human commits use human keys.\n4. **Attribution** — Every commit, PR, and review carries metadata identifying whether it was authored, reviewed, or approved by a human or an AI agent.\n5. **Audit trail** — All version control actions are logged with the agent's identity, the task context, and the authorization scope.\n\n> **CUSTODY:** Traceability (AC-013, AC-015)\n> **NIST AI RMF:** GOVERN 1.7, MANAGE 2.3\n> **DORA 2025:** Code review and change tracking\n\n### Step 3.4: Configure CI/CD Pipeline Controls\n\n1. **Separate AI-authored pipelines from human-authored pipelines** — AI agents cannot modify CI/CD pipeline configurations without human review.\n2. **Approval gates for deployments** — AI agents cannot approve their own deployments. Human approval is required for production deployments.\n3. **Automated security scanning in CI** — SAST, DAST, dependency scanning, and secret detection run on every pipeline. AI-authored code is not exempt.\n4. **Rollback capability for every deployment** — Every CI/CD pipeline must include a tested rollback procedure.\n5. **Change failure rate tracking** — Track the rate of deployments that result in incidents, rollbacks, or failures. AI-authored changes are tagged for separate analysis.\n\n> **CUSTODY:** Supervision (AC-009, AC-011)\n> **LASM:** L7 Governance\n> **DORA 2025:** CI/CD stability metrics, deployment practices\n\n---\n\n## Phase 4 — Logging and Observability\n\n### Step 4.1: Configure Immutable Audit Logging\n\n1. **Log all agent actions** — Every tool call, API request, file operation, shell command, and network request.\n2. **Log with structured metadata** — Each log entry carries: trace ID, session ID, task ID, agent ID, operator ID, timestamp, action, parameters, and outcome.\n3. **Use an append-only log store** — The agent cannot modify or delete its own audit trail.\n4. **Separate logging system** — The agent runtime, the policy engine, and the audit log store are separate systems. No single compromise can affect all three.\n5. **Log retention** — Retain logs per organizational policy (minimum 90 days for development environments).\n\n> **CUSTODY:** Traceability (AC-013, AC-014, AC-015)\n> **NIST AI RMF:** GOVERN 1.7\n> **LASM:** L7 Governance\n\n### Step 4.2: Configure Real-Time Monitoring\n\n1. **Action rate monitoring** — Alert on unusual tool call rates, execution times, or token consumption.\n2. **Scope boundary monitoring** — Alert on any action that hits or approaches the authorized scope boundary.\n3. **Credential monitoring** — Alert on credential access patterns that deviate from the baseline.\n4. **Egress monitoring** — Alert on any outbound traffic to non-allowlisted destinations.\n5. **Audit gap detection** — Alert on any gap in the audit trail (missing log entries, out-of-order timestamps).\n\n> **CUSTODY:** Operational Controls (AC-017), Traceability (AC-013)\n> **LASM:** L7 Governance\n> **DORA 2025:** Monitoring and observability\n\n### Step 4.3: Configure Memory Controls\n\n1. **Session memory controls** — Agent conversation history and context are scoped to the current task and cleared on session end.\n2. **Long-term memory controls** — If the agent uses persistent memory (vector store, database), apply write controls:\n   - Source labeling: every entry carries provenance (who/what wrote it, when, from what source).\n   - Retention limits: stale entries are pruned on a defined schedule.\n   - Write access controls: only authorized sources can write to memory.\n   - Quarantine: entries from untrusted sources are flagged and isolated.\n3. **Memory isolation** — Each agent instance has its own memory namespace. Agents cannot read each other's memory.\n\n> **CUSTODY:** Untrusted Input (AC-008), Dependency (AC-021)\n> **LASM:** L3 Memory, L5 Integration\n\n---\n\n## Phase 5 — Supervision and Governance\n\n### Step 5.1: Configure Approval Gates\n\n1. **High-impact action approval** — Actions that modify production state, deploy code, change infrastructure, or affect user data require explicit human approval.\n2. **Approval at the infrastructure level** — Approval gates are enforced by the policy engine, not by agent logic. The agent cannot modify, bypass, or deactivate approval rules.\n3. **Approval logging** — Every approval request and decision is logged with the approver's identity, timestamp, and rationale.\n4. **Timeout on approval requests** — If an approval request is not resolved within a defined time window, the action is denied by default.\n\n> **CUSTODY:** Supervision (AC-009, AC-011)\n> **LASM:** L7 Governance\n> **NIST AI RMF:** GOVERN 1.3\n\n### Step 5.2: Configure Goal Specification and Stop Conditions\n\n1. **Explicit task definition** — Each agent task has a defined goal with measurable success criteria and explicit boundaries.\n2. **Stop conditions** — The agent halts and escalates when:\n   - The task goal is achieved (success).\n   - The time budget is exceeded.\n   - The error threshold is reached (N consecutive failures).\n   - The scope boundary is approached or crossed.\n   - The agent's confidence in its next action falls below a defined threshold.\n   - An approval request is denied.\n3. **Human escalation** — When a stop condition triggers, the agent does not continue autonomously. It pauses and requests human guidance.\n\n> **CUSTODY:** Supervision (AC-012), Conditions of Release (AC-002)\n> **LASM:** L2 Cognitive, L7 Governance\n\n### Step 5.3: Define Authorization Artifacts for Development Tasks\n\n1. **Per-task authorization** — Each development task the agent performs is governed by an authorization artifact specifying:\n   - Permitted tools and APIs\n   - Permitted file paths and repositories\n   - Permitted data sources\n   - Maximum impact level\n   - Human operator responsible\n   - Time window\n2. **Scope change requires re-authorization** — If the agent determines that the task requires tools, data, or actions outside the original scope, it must request re-authorization from the human operator.\n3. **Authorization artifact versioning** — Changes to the authorization artifact are versioned and logged.\n\n> **CUSTODY:** Conditions of Release (AC-001, AC-002, AC-003, AC-004)\n> **LASM:** L7 Governance\n\n---\n\n## Phase 6 — Code Security Controls\n\n### Step 6.1: Configure Automated Security Scanning\n\n1. **SAST (Static Application Security Testing)** — Run on every commit. Scan for known vulnerability patterns (SQL injection, XSS, path traversal, etc.).\n2. **DAST (Dynamic Application Security Testing)** — Run on every deployment to a test environment. Test running applications for security vulnerabilities.\n3. **Dependency scanning** — Run on every build. Check all dependencies against known vulnerability databases (CVE, NVD).\n4. **Secret detection** — Run on every commit. Detect accidentally committed secrets (API keys, passwords, tokens).\n5. **AI-specific code review** — Flag patterns known to be insecure when generated by AI (hardcoded credentials, disabled certificate validation, overly permissive access controls, missing input validation).\n\n> **CUSTODY:** Operational Controls\n> **NIST AI RMF:** MEASURE function\n> **DORA 2025:** Continuous security testing\n\n### Step 6.2: Configure Code Review Requirements\n\n1. **All AI-authored code requires human review** — No AI-authored code is merged without human review and approval.\n2. **Security-focused review** — In addition to functional review, all AI-authored code receives a security review that specifically checks for:\n   - Known AI generation patterns that are insecure (from SlopCodeBench and similar benchmarks)\n   - Missing input validation\n   - Hardcoded credentials or secrets\n   - Overly permissive access controls\n   - Disabled security features (certificate verification, authentication)\n   - Logic errors that pass functional tests but create security vulnerabilities\n3. **Attribution in review** — Code reviews clearly identify which portions were AI-authored and which were human-authored.\n\n> **CUSTODY:** Supervision (AC-009)\n> **NIST AI RMF:** GOVERN 1.3, MANAGE 2.3\n> **DORA 2025:** Code review practices\n\n### Step 6.3: Configure Testing Requirements\n\n1. **Unit tests required** — All AI-authored code must have unit tests before merge.\n2. **Security tests required** — Security test cases must cover the specific vulnerability patterns flagged by SAST and AI-specific review.\n3. **Integration tests required** — Changes that affect API contracts, data flows, or inter-service communication must have integration tests.\n4. **AI-specific test patterns** — Include tests for:\n   - Prompt injection resistance (input validation, instruction hierarchy)\n   - Scope boundary adherence (agent stays within authorized scope)\n   - Error handling (agent fails safely, does not expose sensitive data in errors)\n   - Edge cases that AI commonly gets wrong (off-by-one, null handling, boundary conditions)\n\n> **NIST AI RMF:** MEASURE function\n> **DORA 2025:** Testing automation and coverage\n\n---\n\n## Phase 7 — Verification\n\n### Step 7.1: Run the Harness Engineering Checklist\n\nRun the **Harness Engineering Checklist** (`checklists/harness-engineering.yaml`) against the harness configuration. Every `critical` control must pass. Every `high` control must either pass or have a documented accepted risk.\n\n> **Cross-reference:** checklists/harness-engineering.yaml\n> **NIST AI RMF:** MEASURE function\n\n### Step 7.2: Run Security Verification Tests\n\n1. **Model integrity verification** — Confirm model hashes match published values.\n2. **Instruction hierarchy test** — Attempt prompt injection and verify system instructions take precedence.\n3. **Scope boundary test** — Attempt actions outside the authorized scope and verify they are blocked at the infrastructure level.\n4. **Credential isolation test** — Verify the agent cannot access credentials belonging to other agents or users.\n5. **Egress test** — Verify the agent cannot reach non-allowlisted network destinations.\n6. **Persistence test** — Verify the agent cannot create scheduled tasks, modify startup scripts, or install packages.\n7. **Approval bypass test** — Verify that approval gates cannot be circumvented through delegation, chaining, or parameter manipulation.\n8. **Audit integrity test** — Verify the agent cannot modify or delete its own audit trail.\n9. **Memory isolation test** — Verify the agent cannot access another agent's memory.\n10. **Code security test** — Run SAST, DAST, dependency scanning, and secret detection on AI-authored code and verify all findings are addressed.\n\n> **CUSTODY:** All pillars\n> **LASM:** All layers\n> **DORA 2025:** Continuous verification\n\n### Step 7.3: Document the Harness Configuration\n\nProduce a **Harness Configuration Document** that records:\n\n| Element | Content |\n|---|---|\n| Model provenance | Name, version, source, hash, signature |\n| Environment configuration | Container/VM image, network rules, filesystem layout |\n| Credential management | Secret broker, scoping, TTL, rotation |\n| Tool allowlist | Permitted tools, APIs, and endpoints |\n| Approval gates | Actions requiring approval, approval engine, timeout |\n| Monitoring | Metrics, alerts, dashboards |\n| Logging | Log store, retention, access controls |\n| Security scanning | SAST, DAST, dependency scanning, secret detection |\n| Code review | Review requirements, security checklist |\n| Authorization artifact template | Per-task authorization format |\n\n> **NIST AI RMF:** GOVERN function — documentation and accountability\n> **CUSTODY:** Conditions of Release, Traceability\n\n---\n\n## Phase 8 — Ongoing Maintenance\n\n### Step 8.1: Regular Reviews\n\n1. **Weekly** — Review monitoring dashboards, audit logs, and alert summaries.\n2. **Monthly** — Review tool allowlist, credential scoping, and authorization artifacts for drift.\n3. **Quarterly** — Full harness security review including:\n   - Re-run the Harness Engineering Checklist\n   - Re-run security verification tests\n   - Review threat model for new attack vectors\n   - Update authorization artifacts and scope definitions\n4. **On change** — Whenever the agent's task, tools, or environment change, update the authorization artifact and re-verify controls.\n\n> **NIST AI RMF:** MANAGE function — continuous monitoring\n> **DORA 2025:** Continuous improvement\n\n### Step 8.2: Update on New Threat Intelligence\n\n1. When new vulnerability patterns, attack techniques, or model weaknesses are disclosed:\n   - Update the threat model.\n   - Add new test cases to the security verification suite.\n   - Update SAST/DAST rules to detect new patterns.\n   - Consider a Red Team Engagement (`protocols/red-team-engagement.md`) to test the new threats.\n\n> **Cross-reference:** red-team-engagement.md\n> **NIST AI RMF:** MANAGE — threat-informed updates\n\n### Step 8.3: Environment Rotation\n\n1. **Rebuild environments on a regular schedule** — Destroy and recreate development environments from trusted images at least weekly (daily for high-sensitivity environments).\n2. **Rebuild on security events** — After any security event, immediately rebuild the environment from a trusted image.\n3. **Never reuse environments across agents or tasks** — Each agent task gets a fresh environment.\n\n> **CUSTODY:** Yield (AC-024)\n> **LASM:** L6 Environment\n\n---\n\n## Verification\n\n| Gate | Verification Method | Pass Criteria |\n|---|---|---|\n| Model integrity | Hash comparison | Model hashes match published values |\n| Instruction hierarchy | Injection test suite | System instructions take precedence over all injected inputs |\n| Environment hardening | Automated test suite | All hardening tests pass (privilege, egress, persistence) |\n| Credential management | Isolation test | Agent cannot access other credentials; TTL enforced |\n| Tool allowlist | Scope boundary test | Agent cannot invoke non-allowlisted tools |\n| Approval gates | Bypass test | Approval gates cannot be circumvented |\n| Audit logging | Integrity test | Agent cannot modify or delete its audit trail |\n| Code security | SAST/DAST/dependency scan | No unresolved critical or high findings |\n| Harness checklist | `checklist_run harness-engineering` | All critical items pass; high items pass or have accepted risk |\n| Configuration document | Review | Complete, current, and signed by operator |\n\n---\n\n## Rollback\n\nIf a security verification test fails or a security event occurs during harness setup:\n\n1. **Do not proceed to use the harness** — A failed security test means the harness is not safe to use.\n2. **Diagnose the failure** — Identify the root cause using the test output and audit logs.\n3. **Fix the issue** — Update the harness configuration to address the failure.\n4. **Re-run all security verification tests** — A fix for one issue may introduce or reveal another.\n5. **If the issue cannot be resolved** — Escalate to the Security Lead and follow the Incident Response Protocol (`protocols/incident-response.md`).\n\nIf a security event occurs during harness operation:\n\n1. **Immediately halt the agent** and revoke all credentials.\n2. **Preserve the environment and audit logs** for forensic analysis.\n3. **Follow the Incident Response Protocol** (`protocols/incident-response.md`).\n4. **Rebuild the environment from a trusted image** after the incident is resolved.\n5. **Re-verify all controls** before resuming operation.\n\n> **CUSTODY:** Yield (AC-024), Supervision (AC-009)\n> **DORA 2025:** Rollback capability for every configuration change",
       "title": "Protocol: Secure AI Development Harness Setup"
@@ -2459,7 +2427,7 @@
   },
   "skills": {
     "agent-audit": {
-      "content": "\n# Agent Audit Skill\n\nAudit an AI agent deployment against the CUSTODY containment framework and LASM threat model.\n\n## Steps\n\n1. **Identify the target** — Confirm the agent deployment to audit. Collect:\n   - Agent name, version, and purpose\n   - Deployment environment (OS, container, cloud)\n   - Connected tools, APIs, and data sources\n   - Identity and credential configuration\n   - Network and egress configuration\n   - Logging and monitoring setup\n\n2. **Load the agent-containment checklist** — Read `checklists/agent-containment.yaml` and use it as the audit framework. Each item has an ID (AC-001 through AC-025), CUSTODY pillar, LASM layer, threat, control, severity, and verification.\n\n3. **Audit Conditions of Release (AC-001 to AC-004)**:\n   - Does a machine-readable authorization artifact exist?\n   - Are task scope boundaries explicit and enforced?\n   - Is a tool allowlist in place and enforced by a policy engine?\n   - Is a data inventory defined and is access restricted to authorized sources?\n\n4. **Audit Untrusted Input (AC-005 to AC-008)**:\n   - Is instruction hierarchy enforced (system > user > data)?\n   - Are data and instructions separated in the agent context?\n   - Is model provenance verified (hashes, signatures)?\n   - Is memory write access controlled with source labels and retention limits?\n\n5. **Audit Supervision (AC-009 to AC-012)**:\n   - Are human-in-the-loop approval gates enforced for high-impact actions?\n   - Is the Agent Rule of One in effect (one agent, one task, one operator)?\n   - Are approval gates enforced by external infrastructure, not agent logic?\n   - Are explicit goals, stop conditions, and confidence thresholds defined?\n\n6. **Audit Traceability (AC-013 to AC-015)**:\n   - Are all actions logged to an immutable append-only store with trace IDs?\n   - Is delegation fully logged with delegator, delegate, action, and result?\n   - Are agent runtime, approval engine, and log store separate systems?\n\n7. **Audit Operational Controls (AC-016 to AC-020)**:\n   - Are credentials obtained through a secret broker with time-limited scope?\n   - Are rate limits, quotas, and circuit breakers in place and externally enforced?\n   - Does the agent run as a dedicated non-root account with no-new-privileges?\n   - Is egress default-deny with an allowlisted gateway and DLP?\n   - Is the workload network-segmented with mTLS and per-service authorization?\n\n8. **Audit Dependency (AC-021 to AC-022)**:\n   - Does each agent class have a separate identity, credentials, and network policy?\n   - Are tool artifacts signed, verified, and run in isolated contexts?\n\n9. **Audit Yield (AC-023 to AC-025)**:\n   - Does the agent run from an immutable image with read-only system paths?\n   - Is the environment ephemeral and recreated from a trusted image after each task?\n   - Are credentials automatically revoked on task completion or security event?\n\n10. **Score the audit** — For each CUSTODY pillar, calculate compliance:\n    - Conditions of Release: AC-001 to AC-004 (4 items)\n    - Untrusted Input: AC-005 to AC-008 (4 items)\n    - Supervision: AC-009 to AC-012 (4 items)\n    - Traceability: AC-013 to AC-015 (3 items)\n    - Operational Controls: AC-016 to AC-020 (5 items)\n    - Dependency: AC-021 to AC-022 (2 items)\n    - Yield: AC-023 to AC-025 (3 items)\n\n11. **Map to LASM layers** — Identify which architectural layers (L1-L7) have gaps and which temporal classes (Immediate, Session, Cross-session, Persistent) are at risk.\n\n12. **Generate the audit report** — Present:\n    - Overall compliance score by CUSTODY pillar\n    - LASM layer heatmap (L1-L7 × pass/fail)\n    - Critical findings requiring immediate remediation\n    - Per-item pass/fail with verification evidence\n    - Prioritized remediation plan\n    - Framework mapping to NIST AI RMF, OWASP, and MITRE ATLAS\n\n## Pitfalls\n\n- The agent's own configuration is NOT a reliable security boundary. Verify that controls are enforced by infrastructure external to the agent.\n- Do not accept \"the agent prompt says not to do X\" as a control. Controls must be enforced by SELinux, AppArmor, policy engines, network policies, or similar infrastructure.\n- Verify credentials are actually time-limited and scoped, not just documented as such.\n- Check that logging is actually immutable and append-only, not just \"logs exist.\"\n- The audit must cover all 25 items. Skipping items creates blind spots.",
+      "content": "\n# Agent Audit Skill\n\nAudit an AI agent deployment against the CUSTODY containment framework and LASM threat model.\n\n## Separation of Duties\n\nAn agent auditing the host it runs on is a **self-audit**: the auditor and the\naudited are the same actor. A compromised or wrong agent can mark every control\n\"pass\" without verifying it. This skill enforces separation of duties:\n\n- **Default: no self-audit.** When the target host is the host this skill is\n  running on, the skill **refuses** the audit unless `--self-audit` is\n  explicitly passed. A self-audit result is labeled **advisory only** and is\n  never treated as verified evidence.\n- **Verify the environment out of band.** The host/container controls in\n  `checklists/agent-environment.yaml` (AE-001 through AE-011) **must** be\n  verified using a signed `agent-environment-evidence.json` bundle produced by\n  an independent collector running the `evidence-collect` protocol — not by\n  asking the agent about its own posture.\n- **Verify the signature, not the narrative.** Consume the evidence bundle\n  only after verifying its detached signature against a collector public key\n  obtained independently of the agent. Reject any bundle older than the\n  deployment's freshness window (default 24 hours).\n\n## Steps\n\n1. **Identify the target** — Confirm the agent deployment to audit. Collect:\n   - Agent name, version, and purpose\n   - Deployment environment (OS, container, cloud)\n   - Connected tools, APIs, and data sources\n   - Identity and credential configuration\n   - Network and egress configuration\n   - Logging and monitoring setup\n\n2. **Load the agent-containment checklist** — Read `checklists/agent-containment.yaml` and use it as the audit framework. Each item has an ID (AC-001 through AC-025), CUSTODY pillar, LASM layer, threat, control, severity, and verification.\n\n3. **Audit Conditions of Release (AC-001 to AC-004)**:\n   - Does a machine-readable authorization artifact exist?\n   - Are task scope boundaries explicit and enforced?\n   - Is a tool allowlist in place and enforced by a policy engine?\n   - Is a data inventory defined and is access restricted to authorized sources?\n\n4. **Audit Untrusted Input (AC-005 to AC-008)**:\n   - Is instruction hierarchy enforced (system > user > data)?\n   - Are data and instructions separated in the agent context?\n   - Is model provenance verified (hashes, signatures)?\n   - Is memory write access controlled with source labels and retention limits?\n\n5. **Audit Supervision (AC-009 to AC-012)**:\n   - Are human-in-the-loop approval gates enforced for high-impact actions?\n   - Is the Agent Rule of One in effect (one agent, one task, one operator)?\n   - Are approval gates enforced by external infrastructure, not agent logic?\n   - Are explicit goals, stop conditions, and confidence thresholds defined?\n\n6. **Audit Traceability (AC-013 to AC-015)**:\n   - Are all actions logged to an immutable append-only store with trace IDs?\n   - Is delegation fully logged with delegator, delegate, action, and result?\n   - Are agent runtime, approval engine, and log store separate systems?\n\n7. **Audit Operational Controls (AC-016 to AC-020)**:\n   - Are credentials obtained through a secret broker with time-limited scope?\n   - Are rate limits, quotas, and circuit breakers in place and externally enforced?\n   - Does the agent run as a dedicated non-root account with no-new-privileges?\n   - Is egress default-deny with an allowlisted gateway and DLP?\n   - Is the workload network-segmented with mTLS and per-service authorization?\n\n8. **Audit Dependency (AC-021 to AC-022)**:\n   - Does each agent class have a separate identity, credentials, and network policy?\n   - Are tool artifacts signed, verified, and run in isolated contexts?\n\n9. **Audit Yield (AC-023 to AC-025)**:\n   - Does the agent run from an immutable image with read-only system paths?\n   - Is the environment ephemeral and recreated from a trusted image after each task?\n   - Are credentials automatically revoked on task completion or security event?\n\n10. **Score the audit** — For each CUSTODY pillar, calculate compliance:\n    - Conditions of Release: AC-001 to AC-004 (4 items)\n    - Untrusted Input: AC-005 to AC-008 (4 items)\n    - Supervision: AC-009 to AC-012 (4 items)\n    - Traceability: AC-013 to AC-015 (3 items)\n    - Operational Controls: AC-016 to AC-020 (5 items)\n    - Dependency: AC-021 to AC-022 (2 items)\n    - Yield: AC-023 to AC-025 (3 items)\n\n11. **Map to LASM layers** — Identify which architectural layers (L1-L7) have gaps and which temporal classes (Immediate, Session, Cross-session, Persistent) are at risk.\n\n12. **Generate the audit report** — Present:\n    - Overall compliance score by CUSTODY pillar\n    - LASM layer heatmap (L1-L7 × pass/fail)\n    - Critical findings requiring immediate remediation\n    - Per-item pass/fail with verification evidence\n    - Prioritized remediation plan\n    - Framework mapping to NIST AI RMF, OWASP, and MITRE ATLAS\n\n13. **Audit the agent environment (AE-001 to AE-011)** — Load\n    `checklists/agent-environment.yaml`. These host/container controls must be\n    verified **out of band**: consume a signed `agent-environment-evidence.json`\n    produced by an independent collector running the `evidence-collect`\n    protocol, verify its signature against a collector public key you obtained\n    independently of the agent, and confirm it is within the freshness window.\n    If the target host is the host this skill runs on and `--self-audit` was not\n    passed, **stop** — a self-audit cannot verify AE controls. Record each AE\n    item as pass/fail with the evidence field reference, and roll the AE\n    results into the report alongside the CUSTODY/LASM findings.\n\n## Pitfalls\n\n- The agent's own configuration is NOT a reliable security boundary. Verify that controls are enforced by infrastructure external to the agent.\n- Do not accept \"the agent prompt says not to do X\" as a control. Controls must be enforced by SELinux, AppArmor, policy engines, network policies, or similar infrastructure.\n- Verify credentials are actually time-limited and scoped, not just documented as such.\n- Check that logging is actually immutable and append-only, not just \"logs exist.\"\n- The audit must cover all 25 items. Skipping items creates blind spots.",
       "frontmatter": {
         "description": "Audit an AI agent deployment against the CUSTODY containment framework and LASM threat model. Checks identity, input handling, supervision, traceability, operational controls, dependency management, and yield/teardown. Maps findings to NIST AI RMF, OWASP, CUSTODY pillars, and LASM layers.\n",
         "name": "agent-audit",

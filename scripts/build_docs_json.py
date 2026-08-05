@@ -63,9 +63,20 @@ def build_checklists() -> dict[str, dict]:
     out: dict[str, dict] = {}
     for path in sorted(CHECKLISTS_DIR.glob("*.yaml")):
         raw = _load_yaml(path) or {}
+        items = raw.get("checklist", []) or []
+        # Maintainer visibility: warn on items with empty core fields so a
+        # schema regression is visible before the data ships to the docs site.
+        for item in items:
+            if isinstance(item, dict):
+                for key in ("threat", "control", "verification"):
+                    if not item.get(key):
+                        print(
+                            f"WARNING: {path.name}/{item.get('id', '?')} has empty {key!r}",
+                            file=sys.stderr,
+                        )
         out[path.stem] = {
             "meta": raw.get("metadata", {}) or {},
-            "items": raw.get("checklist", []) or [],
+            "items": items,
         }
     return out
 

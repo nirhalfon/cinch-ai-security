@@ -24,6 +24,26 @@ tools:
 
 Audit an AI agent deployment against the CUSTODY containment framework and LASM threat model.
 
+## Separation of Duties
+
+An agent auditing the host it runs on is a **self-audit**: the auditor and the
+audited are the same actor. A compromised or wrong agent can mark every control
+"pass" without verifying it. This skill enforces separation of duties:
+
+- **Default: no self-audit.** When the target host is the host this skill is
+  running on, the skill **refuses** the audit unless `--self-audit` is
+  explicitly passed. A self-audit result is labeled **advisory only** and is
+  never treated as verified evidence.
+- **Verify the environment out of band.** The host/container controls in
+  `checklists/agent-environment.yaml` (AE-001 through AE-011) **must** be
+  verified using a signed `agent-environment-evidence.json` bundle produced by
+  an independent collector running the `evidence-collect` protocol — not by
+  asking the agent about its own posture.
+- **Verify the signature, not the narrative.** Consume the evidence bundle
+  only after verifying its detached signature against a collector public key
+  obtained independently of the agent. Reject any bundle older than the
+  deployment's freshness window (default 24 hours).
+
 ## Steps
 
 1. **Identify the target** — Confirm the agent deployment to audit. Collect:
@@ -93,6 +113,17 @@ Audit an AI agent deployment against the CUSTODY containment framework and LASM 
     - Per-item pass/fail with verification evidence
     - Prioritized remediation plan
     - Framework mapping to NIST AI RMF, OWASP, and MITRE ATLAS
+
+13. **Audit the agent environment (AE-001 to AE-011)** — Load
+    `checklists/agent-environment.yaml`. These host/container controls must be
+    verified **out of band**: consume a signed `agent-environment-evidence.json`
+    produced by an independent collector running the `evidence-collect`
+    protocol, verify its signature against a collector public key you obtained
+    independently of the agent, and confirm it is within the freshness window.
+    If the target host is the host this skill runs on and `--self-audit` was not
+    passed, **stop** — a self-audit cannot verify AE controls. Record each AE
+    item as pass/fail with the evidence field reference, and roll the AE
+    results into the report alongside the CUSTODY/LASM findings.
 
 ## Pitfalls
 

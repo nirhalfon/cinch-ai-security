@@ -76,6 +76,7 @@ The server exposes these tools for any MCP-compatible agent:
 | `protocol_get` | Get a step-by-step protocol by name |
 | `mapping_lookup` | Look up controls mapped to a framework (NIST, OWASP, CUSTODY, LASM, ATLAS) |
 | `threat_search` | Search all checklists for controls that mitigate a given threat |
+| `checklist_diff` | Compare two checklists to show coverage gaps and duplicated controls |
 
 ## Project structure
 
@@ -93,15 +94,18 @@ cinch/
 │   └── loader.py                   # YAML checklist/protocol/mapping loader
 ├── tests/                          # pytest: loader + server (path-traversal, dispatch)
 ├── scripts/
-│   └── build_docs_json.py          # Regenerates docs-site/data/full.json from source
+│   ├── build_docs_json.py          # Regenerates docs-site/data/full.json from source
+│   └── migrate_schema.py           # One-time Schema B → canonical Schema A migration
 ├── checklists/
 │   ├── agent-containment.yaml      # CUSTODY-based agent containment
+│   ├── agent-environment.yaml      # Host/container controls (out-of-band audited)
 │   ├── harness-engineering.yaml    # AI dev harness safeguards
 │   ├── system-hardening.yaml       # OS/infra hardening for AI workloads
 │   ├── red-team.yaml               # AI red team engagement checklist
 │   └── supply-chain.yaml           # AI supply chain security
 ├── protocols/
 │   ├── agent-deployment.md         # Secure AI agent deployment
+│   ├── evidence-collect.md         # Out-of-band host evidence for AE controls
 │   ├── incident-response.md        # AI incident response
 │   ├── red-team-engagement.md      # AI red team engagement
 │   └── harness-setup.md           # Setting up a secure AI development harness

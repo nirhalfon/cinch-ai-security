@@ -12,9 +12,9 @@ from cinch.loader import (
     search_by_threat,
 )
 
-CHECKLISTS = ["agent-containment", "harness-engineering", "red-team", "supply-chain", "system-hardening"]
+CHECKLISTS = ["agent-containment", "agent-environment", "harness-engineering", "red-team", "supply-chain", "system-hardening"]
 MAPPINGS = ["atlas-crosswalk", "custody-crosswalk", "lasm-crosswalk", "nist-rmf-crosswalk", "owasp-llm-crosswalk"]
-PROTOCOLS = ["agent-deployment", "harness-setup", "incident-response", "red-team-engagement"]
+PROTOCOLS = ["agent-deployment", "evidence-collect", "harness-setup", "incident-response", "red-team-engagement"]
 
 
 # ── Valid loads ──
@@ -24,13 +24,20 @@ def test_load_checklist_valid(name):
     cl = load_checklist(name)
     assert cl.name
     assert len(cl.items) > 0
-    # Every item has the required fields populated.
+    # Every item has the required fields populated. The threat/control
+    # assertions guard against schema drift: every canonical Schema A item
+    # must carry a non-empty threat and control, otherwise the MCP tools
+    # would silently hand back empty core fields (the Issue 1 regression).
     for item in cl.items:
         assert item.id
         assert item.category
+        assert item.threat, f"{name}/{item.id} has empty threat"
+        assert item.control, f"{name}/{item.id} has empty control"
+        assert item.severity
+        assert item.verification
 
 
-def test_list_checklists_has_all_five():
+def test_list_checklists_has_all_six():
     cls = list_checklists()
     names = {c["name"] for c in cls}
     assert names == set(CHECKLISTS)

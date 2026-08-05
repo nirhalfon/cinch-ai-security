@@ -18,6 +18,7 @@ EXPECTED_TOOLS = {
     "protocol_get",
     "mapping_lookup",
     "threat_search",
+    "checklist_diff",
 }
 
 
@@ -34,7 +35,7 @@ def _payload(result):
 
 # ── list_tools ──
 
-def test_list_tools_advertises_all_six():
+def test_list_tools_advertises_all_seven():
     tools = _run(APP.list_tools())
     names = {t.name for t in tools}
     assert names == EXPECTED_TOOLS
@@ -50,10 +51,10 @@ def test_list_tools_advertises_all_six():
 def test_checklist_list_returns_json():
     payload = _payload(_run(APP.call_tool("checklist_list", {})))
     assert isinstance(payload, list)
-    assert len(payload) == 5
+    assert len(payload) == 6
     assert {c["name"] for c in payload} == {
-        "agent-containment", "harness-engineering", "red-team",
-        "supply-chain", "system-hardening",
+        "agent-containment", "agent-environment", "harness-engineering",
+        "red-team", "supply-chain", "system-hardening",
     }
 
 
@@ -89,6 +90,20 @@ def test_threat_search_returns_matches():
     payload = _payload(_run(APP.call_tool("threat_search", {"query": "prompt injection"})))
     assert isinstance(payload, list)
     assert len(payload) > 0
+
+
+def test_checklist_diff_returns_a_only_b_only():
+    payload = _payload(_run(APP.call_tool("checklist_diff", {
+        "a": "agent-containment", "b": "harness-engineering",
+    })))
+    assert set(payload) == {"a_only", "b_only"}
+    assert isinstance(payload["a_only"], list)
+    assert isinstance(payload["b_only"], list)
+    # Every diff entry names its source checklist and carries an id + control.
+    for entry in payload["a_only"] + payload["b_only"]:
+        assert entry["checklist"] in ("AI Agent Containment Checklist", "Harness Engineering Checklist")
+        assert entry["id"]
+        assert entry["control"]
 
 
 # ── not-found returns error JSON, not a crash ──

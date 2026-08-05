@@ -78,6 +78,23 @@ jobs:
       - name: Dependency audit (pip-audit)
         run: pip-audit --strict
 
+      - name: Verify checklist content integrity
+        run: |
+          python3 -c "
+          from cinch.loader import list_checklists, load_checklist
+          failures = []
+          for c in list_checklists():
+              cl = load_checklist(c['name'])
+              for it in cl.items:
+                  if not it.threat or not it.control or not it.verification:
+                      failures.append(f\"{c['name']}/{it.id} has empty threat/control/verification\")
+          if failures:
+              for f in failures:
+                  print(f'ERROR: {f}')
+              raise SystemExit(1)
+          print('All checklist items have non-empty core fields.')
+          "
+
       - name: Tests (pytest)
         run: pytest -q
 

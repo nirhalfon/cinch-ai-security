@@ -166,14 +166,14 @@ const PAGES = {
     </div>
     <h2>How it works</h2>
     <pre><code>YAML checklists ──┐   ┌── cross-harness skills (Claude / Hermes / OpenClaw / NanoClaw)
-  (106 controls)  │   │
-  protocols ──────┼─▶ MCP server (6 tools) ◀── agent queries at runtime
+  (117 controls)  │   │
+  protocols ──────┼─▶ MCP server (7 tools) ◀── agent queries at runtime
   mappings ───────┘   └── frameworks: NIST AI RMF · OWASP · ATLAS · CUSTODY · LASM</code></pre>
     <p class="text-muted">The agent never trusts a prompt to enforce a boundary. It asks Cinch for the control, the verification step, and the framework mapping — and the harness enforces the answer.</p>
     <h2>What's Inside</h2>
     <div class="grid grid-3">
-      <div class="card"><div class="card-icon">📋</div><h3>Checklists</h3><p>106 enforceable controls across 5 checklists, each mapped to a threat and a verification step.</p><div class="card-meta"><span class="tag tag-framework">NIST</span><span class="tag tag-framework">OWASP</span><span class="tag tag-framework">CUSTODY</span></div></div>
-      <div class="card"><div class="card-icon">📡</div><h3>MCP Server</h3><p>6 tools any MCP-compatible agent can query for controls, protocols, and mappings at runtime.</p><div class="card-meta"><span class="tag tag-framework">Claude</span><span class="tag tag-framework">Hermes</span><span class="tag tag-framework">OpenClaw</span></div></div>
+      <div class="card"><div class="card-icon">📋</div><h3>Checklists</h3><p>117 enforceable controls across 6 checklists, each mapped to a threat and a verification step.</p><div class="card-meta"><span class="tag tag-framework">NIST</span><span class="tag tag-framework">OWASP</span><span class="tag tag-framework">CUSTODY</span></div></div>
+      <div class="card"><div class="card-icon">📡</div><h3>MCP Server</h3><p>7 tools any MCP-compatible agent can query for controls, protocols, and mappings at runtime.</p><div class="card-meta"><span class="tag tag-framework">Claude</span><span class="tag tag-framework">Hermes</span><span class="tag tag-framework">OpenClaw</span></div></div>
       <div class="card"><div class="card-icon">🧠</div><h3>Skills</h3><p>Drop-in skill definitions for Hermes, Claude, OpenClaw, and NanoClaw.</p><div class="card-meta"><span class="tag tag-pillar">3 Skills</span></div></div>
       <div class="card"><div class="card-icon">📐</div><h3>Protocols</h3><p>Step-by-step deployment, incident response, red team, and harness setup procedures.</p><div class="card-meta"><span class="tag tag-pillar">4 Protocols</span></div></div>
       <div class="card"><div class="card-icon">🔗</div><h3>Mappings</h3><p>Cross-reference controls to NIST AI RMF, OWASP, MITRE ATLAS, CUSTODY, and LASM.</p><div class="card-meta"><span class="tag tag-layer">5 Frameworks</span></div></div>
@@ -182,7 +182,7 @@ const PAGES = {
 
   checklists: async () => {
     const d = await loadData();
-    let html = `<h1>Security Checklists</h1><p class="text-muted mb-4">106 enforceable controls across 5 checklists, each mapped to a threat and verification step.</p>
+    let html = `<h1>Security Checklists</h1><p class="text-muted mb-4">117 enforceable controls across 6 checklists, each mapped to a threat and verification step.</p>
     <div class="tabs" id="cl-tabs">${Object.keys(d.checklists).map((k,i)=>
       `<div class="tab ${i===0?'active':''}" data-cl="${esc(k)}">${esc(d.checklists[k].meta.name||k.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()))}</div>`
     ).join('')}</div><div id="cl-content"></div>`;
@@ -287,7 +287,7 @@ ai-harness-scorecard assess .</code></pre>`,
 
   mcp_server: () => `
     <h1>📡 MCP Server</h1>
-    <p class="text-muted mb-4">Cinch provides an MCP server with 6 tools that any MCP-compatible agent can query at runtime.</p>
+    <p class="text-muted mb-4">Cinch provides an MCP server with 7 tools that any MCP-compatible agent can query at runtime.</p>
     <h2>Available Tools</h2>
     <table>
       <thead><tr><th>Tool</th><th>Description</th></tr></thead>
@@ -298,6 +298,7 @@ ai-harness-scorecard assess .</code></pre>`,
         <tr><td><code>protocol_get</code></td><td>Get a step-by-step security protocol by name</td></tr>
         <tr><td><code>mapping_lookup</code></td><td>Look up controls mapped to a framework (NIST, OWASP, CUSTODY, LASM, ATLAS)</td></tr>
         <tr><td><code>threat_search</code></td><td>Search all checklists for controls that mitigate a given threat</td></tr>
+        <tr><td><code>checklist_diff</code></td><td>Compare two checklists and show coverage gaps and duplicated controls</td></tr>
       </tbody>
     </table>
     <h2>Installation</h2>

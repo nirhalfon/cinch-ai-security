@@ -1,0 +1,195 @@
+# AI Agent Environment Checklist
+# Audits the host/container an agent runs on — the layer cinch previously skipped.
+# Addresses the self-audit integrity gap (Issue 5): the environment is what makes
+# a bad model decision fail safe, so it must be verified out-of-band, not by the
+# agent narrating its own posture.
+
+metadata:
+  id: agent-environment
+  name: "AI Agent Environment Checklist"
+  version: "1.0.0"
+  description: >
+    Enforceable controls for the host or container an AI agent executes on.
+    Covers identity and privileges, mandatory access control, network egress,
+    audit logging, secrets delivery, image provenance, filesystem state,
+    capability bounding, syscall filtering, and resource limits. Core
+    assumption: an AI agent can be manipulated, compromised, or wrong — its
+    environment must prevent a bad decision from becoming an unrestricted action.
+    These controls are verified out-of-band via the evidence-collect protocol,
+    not by the agent auditing itself.
+  categories:
+    - id: identity
+      name: "Identity & Privilege"
+      weight: 15
+    - id: mac
+      name: "Mandatory Access Control"
+      weight: 15
+    - id: network
+      name: "Network & Egress"
+      weight: 15
+    - id: logging
+      name: "Audit Logging"
+      weight: 10
+    - id: secrets
+      name: "Secrets Delivery"
+      weight: 10
+    - id: provenance
+      name: "Image & Artifact Provenance"
+      weight: 10
+    - id: filesystem
+      name: "Filesystem State"
+      weight: 10
+    - id: runtime
+      name: "Runtime Hardening"
+      weight: 15
+
+checklist:
+
+  # ── Identity & Privilege ──────────────────────────────────────
+
+  - id: AE-001
+    category: identity
+    custody_pillar: Operational Controls
+    lasm_layer: L6 Environment
+    threat: "Privilege escalation: agent or a sub-process gains root or escalates privileges at runtime"
+    control: "Agent runs as a dedicated non-root UID/GID with no-new-privileges set (NO_NEW_PRIVS) so setuid binaries and capabilities cannot raise privileges"
+    severity: critical
+    verification: "Process runs as a non-root UID; NO_NEW_PRIVS is set on the agent unit/container; getcap shows no file capabilities that bypass it"
+    sources:
+      - NIST SP 800-53 — AC-6 Least Privilege
+      - systemd ProtectSystem=no_new_privs
+      - CUSTODY Operational Controls
+
+  - id: AE-002
+    category: identity
+    custody_pillar: Operational Controls
+    lasm_layer: L6 Environment
+    threat: "Capability abuse: agent holds Linux capabilities broader than its task requires"
+    control: "Linux capability bounding set is reduced to the minimum required (drop CAP_SYS_ADMIN, CAP_NET_ADMIN, CAP_DAC_OVERRIDE, etc.) and the effective/permitted sets match"
+    severity: high
+    verification: "/proc/self/status CapBnd and CapEff show only the required capabilities; capabilities not needed are absent from all four sets"
+    sources:
+      - Linux capabilities(7)
+      - NIST SP 800-53 — AC-3 Access Enforcement
+
+  # ── Mandatory Access Control ──────────────────────────────────
+
+  - id: AE-003
+    category: mac
+    custody_pillar: Operational Controls
+    lasm_layer: L6 Environment
+    threat: "Escape from intended context: agent writes outside its working directory or executes unexpected binaries"
+    control: "A mandatory access control profile (AppArmor, SELinux, or seccomp) confines the agent process to permitted paths and syscalls; profile is enforced, not permissive"
+    severity: critical
+    verification: "aa-status shows the AppArmor profile is loaded and enforcing (or SELinux mode is Enforcing); the agent process label is confined; audit denies appear on out-of-profile access"
+    sources:
+      - AppArmor / SELinux documentation
+      - NIST SP 800-53 — SC-3 Security Function Isolation
+
+  - id: AE-004
+    category: mac
+    custody_pillar: Operational Controls
+    lasm_layer: L6 Environment
+    threat: "Syscall abuse: agent invokes syscalls outside its expected surface (kernel exploit, namespace escape)"
+    control: "A seccomp-bpf allowlist filters syscalls to the subset the agent needs; dangerous syscalls (keyctl, bpf, userfaultfd, perf_event_open) are blocked"
+    severity: high
+    verification: "Seccomp filter is attached to the agent process (mode 2 filter); blocked syscalls return EPERM and are logged"
+    sources:
+      - seccomp(2) / OCI seccomp profile
+      - CUSTODY Operational Controls
+
+  # ── Network & Egress ──────────────────────────────────────────
+
+  - id: AE-005
+    category: network
+    custody_pillar: Operational Controls
+    lasm_layer: L6 Environment
+    threat: "Data exfiltration: agent sends data to unauthorized endpoints or pivots to internal hosts"
+    control: "Egress is default-deny at the network boundary; the agent may reach only an allowlisted proxy/gateway; direct outbound is blocked"
+    severity: critical
+    verification: "iptables/nftables OUTPUT policy is DROP with an explicit allowlist; a connection to a non-allowlisted host fails; egress passes through the gateway"
+    sources:
+      - NIST SP 800-53 — SC-7 Boundary Protection
+      - CUSTODY Operational Controls
+
+  - id: AE-006
+    category: network
+    custody_pillar: Operational Controls
+    lasm_layer: L6 Environment
+    threat: "Lateral movement: agent reaches other services or the metadata API on the host network"
+    control: "Agent workload is network-isolated in its own namespace; metadata service endpoints are blocked; per-service mTLS authorization is required for any east-west traffic"
+    severity: high
+    verification: "Network namespace is separate; cloud metadata endpoint (169.254.169.254) is unreachable; east-west traffic requires mTLS"
+    sources:
+      - Kubernetes NetworkPolicy
+      - NIST SP 800-53 — SC-7 Boundary Protection
+
+  # ── Audit Logging ─────────────────────────────────────────────
+
+  - id: AE-007
+    category: logging
+    custody_pillar: Traceability
+    lasm_layer: L6 Environment
+    threat: "Repudiation or blind spots: agent actions occur without a tamper-evident record"
+    control: "Agent actions and control denials are logged to an append-only, external destination; logs carry trace IDs, timestamps, and the confined identity"
+    severity: high
+    verification: "Audit log destination is external and append-only; seccomp/AppArmor denies are logged; logs cannot be written or deleted by the agent UID"
+    sources:
+      - NIST SP 800-53 — AU-2 Audit Events, AU-10 Non-repudiation
+      - CUSTODY Traceability
+
+  # ── Secrets Delivery ──────────────────────────────────────────
+
+  - id: AE-008
+    category: secrets
+    custody_pillar: Operational Controls
+    lasm_layer: L6 Environment
+    threat: "Credential theft or reuse: long-lived secrets are materialized where the agent can read or exfiltrate them"
+    control: "Secrets are brokered just-in-time with short TTLs and scoped scope; no static credentials in env, files, or image; brokered tokens are revocable"
+    severity: critical
+    verification: "Secrets come from a broker/vault with TTL; no secrets in env vars or filesystem; brokered credentials are revoked on task completion"
+    sources:
+      - HashiCorp Vault / cloud secret managers
+      - NIST SP 800-53 — IA-5 Authenticator Management
+
+  # ── Image & Artifact Provenance ───────────────────────────────
+
+  - id: AE-009
+    category: provenance
+    custody_pillar: Dependency
+    lasm_layer: L1 Foundation
+    threat: "Tampered runtime: agent runs from an image or artifacts that were modified or built from untrusted sources"
+    control: "Agent image is immutable and signed; signature is verified before launch; an SBOM/AIBOM is attached and the running image matches the signed digest"
+    severity: high
+    verification: "Image signature verifies against a trusted key; the running digest matches the signed digest; SBOM is present and matches installed packages"
+    sources:
+      - in-toto / SLSA provenance
+      - NIST SP 800-53 — SI-3 Malware Protection
+
+  # ── Filesystem State ──────────────────────────────────────────
+
+  - id: AE-010
+    category: filesystem
+    custody_pillar: Yield
+    lasm_layer: L6 Environment
+    threat: "Persistent tampering: agent writes changes that survive across tasks and alter future behavior"
+    control: "System paths are read-only; the agent writable directory is tmpfs/ephemeral and discarded after the task; no state persists across runs"
+    severity: high
+    verification: "Root filesystem is mounted read-only; only the working dir is writable and is tmpfs; state is gone after task completion"
+    sources:
+      - CUSTODY Yield
+      - NIST SP 800-53 — SC-5 Denial of Service Protection
+
+  # ── Runtime Hardening ──────────────────────────────────────────
+
+  - id: AE-011
+    category: runtime
+    custody_pillar: Operational Controls
+    lasm_layer: L6 Environment
+    threat: "Resource exhaustion: agent loops, forks, or allocates without bound and starves the host"
+    control: "Resource limits (CPU, memory, file descriptors, processes, wall-clock) are enforced by the container runtime or cgroups; a hard execution timeout terminates runaway sessions"
+    severity: high
+    verification: "cgroup limits are set for CPU/memory/pids/fd; a runaway loop is killed by the limit before host impact; execution timeout fires"
+    sources:
+      - systemd / cgroups resource limits
+      - NIST SP 800-53 — SC-5 Denial of Service Protection
