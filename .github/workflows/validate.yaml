@@ -84,8 +84,15 @@ jobs:
       - name: Security scan (bandit)
         run: bandit -r src -q
 
+      # Audit the resolved dependencies, not the editable install of this project.
+      # `pip-audit --strict` on the environment fails on every version bump ("cinch-ai-
+      # security not found on PyPI"), which says nothing about our dependencies — and
+      # --skip-editable cannot be combined with --strict. Freezing the non-editable set
+      # first keeps --strict meaningful: any dependency that cannot be audited fails CI.
       - name: Dependency audit (pip-audit)
-        run: pip-audit --strict
+        run: |
+          pip freeze --exclude-editable > /tmp/deps.txt
+          pip-audit --strict -r /tmp/deps.txt
 
       - name: Verify checklist content integrity
         run: |
