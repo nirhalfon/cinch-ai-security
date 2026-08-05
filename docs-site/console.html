@@ -305,15 +305,70 @@ const RAW = [
   ['AC-024','Yield','L6','Compromised environment cannot be recovered','Ephemeral sandbox with secure teardown — destroy and recreate from trusted images','critical','Agent runtime is ephemeral. Environment destroyed and recreated from a trusted image after task completion or security event.','CUSTODY Yield|System Hardening'],
   ['AC-025','Yield','L6','Credential persistence: agent credentials remain active after task completion','Automatic credential revocation and rotation on task completion or security event','critical','Agent credentials automatically revoked on task completion or security event. No long-lived credentials persist beyond the session.','CUSTODY Yield|System Hardening']
 ];
-const LAYERS = [
-  ['L1','Foundation','Model weights, training, fine-tuning, embeddings',['AC-007']],
-  ['L2','Cognitive','Planning, reasoning, goal formation, task decomposition',['AC-012']],
-  ['L3','Memory','Short-term state, long-term memory, RAG, vector stores',['AC-004','AC-008']],
-  ['L4','Tool Execution','APIs, plugins, browsers, code interpreters, databases',['AC-003','AC-005','AC-006','AC-011','AC-017']],
-  ['L5','Integration','Agent-to-agent, orchestration, delegation, MCP',['AC-014','AC-021','AC-022']],
-  ['L6','Environment','OS, network, identity, filesystem, credentials',['AC-016','AC-018','AC-019','AC-020','AC-023','AC-024']],
-  ['L7','Governance','Policy, compliance, oversight, audit',['AC-001','AC-002','AC-009','AC-010','AC-013','AC-015']]
+/* ── Real data layer ──
+   The console fetches the canonical docs-site/data/full.json bundle at runtime
+   (the same data the MCP server serves), so the dashboard reflects the live
+   catalog rather than a frozen demo. RAW is the offline fallback (it mirrors the
+   published agent-containment checklist) used only when the fetch fails (e.g. the
+   page is opened from file://). */
+let DATA = null;
+async function loadData(){
+  try {
+    const res = await fetch('data/full.json', {cache:'no-cache'});
+    if(!res.ok) throw new Error('http '+res.status);
+    DATA = await res.json();
+  } catch(e){ DATA = null; }
+}
+const CL_META = [
+  ['agent-containment','AI Agent Containment','AC'],
+  ['agent-environment','Agent Environment','AE'],
+  ['harness-engineering','AI Dev Harness','HE'],
+  ['red-team','AI Red Team','RT'],
+  ['supply-chain','Supply Chain','SC'],
+  ['system-hardening','System Hardening','SH']
 ];
+function mapItem(it, cl){
+  const layer = it.lasm_layer || '';
+  return { checklist:cl, id:it.id, pillar:it.custody_pillar||'', layer:layer.split(' ')[0],
+    layerFull:layer, threat:it.threat||'', control:it.control||'', sev:it.severity||'medium',
+    verify:it.verification||'', sources:it.sources||[], category:it.category||'' };
+}
+function AC(){                                  // assessment controls (agent-containment, full CUSTODY+LASM mapping)
+  if(DATA && DATA.checklists && DATA.checklists['agent-containment'])
+    return DATA.checklists['agent-containment'].items.map(it => mapItem(it,'agent-containment'));
+  return RAW.map(r => ({ id:r[0], pillar:r[1], layer:r[2], layerFull:r[2], threat:r[3], control:r[4], sev:r[5], verify:r[6], sources:r[7].split('|'), checklist:'agent-containment', category:'' }));
+}
+function ALL(){                                 // full 117-control catalog across all 6 checklists
+  if(DATA && DATA.checklists)
+    return CL_META.flatMap(([cl]) => ((DATA.checklists[cl]&&DATA.checklists[cl].items)||[]).map(it => mapItem(it,cl)));
+  return AC();
+}
+function checklistCounts(){
+  return CL_META.map(([cl,title,pf]) => {
+    const items = ALL().filter(c=>c.checklist===cl);
+    const reviewed = items.filter(c=>state.status[c.id]==='pass'||state.status[c.id]==='fail').length;
+    const gaps = items.filter(c=>state.status[c.id]==='fail').length;
+    return {cl,title,pf,count:items.length,reviewed,gaps};
+  });
+}
+const LAYER_DEFS = [
+  ['L1','Foundation','Model weights, training, fine-tuning, embeddings'],
+  ['L2','Cognitive','Planning, reasoning, goal formation, task decomposition'],
+  ['L3','Memory','Short-term state, long-term memory, RAG, vector stores'],
+  ['L4','Tool Execution','APIs, plugins, browsers, code interpreters, databases'],
+  ['L5','Integration','Agent-to-agent, orchestration, delegation, MCP'],
+  ['L6','Environment','OS, network, identity, filesystem, credentials'],
+  ['L7','Governance','Policy, compliance, oversight, audit']
+];
+/* LAYERS id-lists are derived from the real catalog (grouped by lasm_layer) so the
+   7×4 grid reflects the live mapping, not a hand-maintained snapshot. */
+let LAYERS = LAYER_DEFS.map(d => [d[0], d[1], d[2], []]);
+function buildLayers(){
+  const ac = AC(); const by = {};
+  for(const c of ac){ const code=c.layer; if(!code) continue; (by[code]=by[code]||[]).push(c.id); }
+  LAYERS = LAYER_DEFS.map(d => [d[0], d[1], d[2], by[d[0]]||[]]);
+}
+const C = AC;                                   // assessment controls alias (used by views + compute)
 const TEMPORAL = [
   ['T1','Immediate','Single interaction',['AC-005','AC-006','AC-011']],
   ['T2','Session','Single session',['AC-012','AC-017']],
@@ -400,7 +455,7 @@ const TITLES = {
 
 /* ── State ── */
 const state = {
-  view: 'overview', idx: 5, exportOpen: false, q: '', sev: 'all',
+  view: 'overview', idx: 5, exportOpen: false, q: '', sev: 'all', cl: 'all',
   openId: null, cell: 'L4|T1',
   status: {
     'AC-001':'pass','AC-002':'pass','AC-003':'pass','AC-004':'pass','AC-005':'pass',
@@ -415,7 +470,6 @@ const state = {
 };
 
 /* ── Helpers ── */
-const C = () => RAW.map(r => ({ id:r[0], pillar:r[1], layer:r[2], threat:r[3], control:r[4], sev:r[5], verify:r[6], sources:r[7].split('|') }));
 const CIRC = 339.29;
 function layerName(l){ const m = LAYERS.find(x => x[0]===l); return m ? l+' '+m[1] : l; }
 function sevStyle(s){
@@ -454,10 +508,10 @@ function viewOverview(){
   const {ctl, reviewed, score, ringColor, gapsList, critGaps, unreviewed} = compute();
   const scoreCopy = critGaps ? critGaps+' critical controls are unenforced. Until they are, a single bad model decision can reach production systems.' : 'All critical containment controls are enforced for this deployment.';
   const tiles = [
-    {label:'Reviewed', value:reviewed.length+'/25', hint:unreviewed+' left to assess', color:'#fff'},
+    {label:'Reviewed', value:reviewed.length+'/'+ctl.length, hint:unreviewed+' left to assess', color:'#fff'},
     {label:'Critical gaps', value:String(critGaps), hint:'block release', color:'#ef4444'},
     {label:'High gaps', value:String(gapsList.length-critGaps), hint:'fix this sprint', color:'#f59e0b'},
-    {label:'Last run', value:'2h', hint:'via MCP checklist_run', color:'#fff'}
+    {label:'Catalog', value:String(ALL().length), hint:'live from full.json', color:'#fff'}
   ];
   const pillars = PILLARS.map(p => {
     const items = ctl.filter(c=>c.pillar===p[0]);
@@ -499,13 +553,16 @@ function viewOverview(){
     html += '<div class="gap-row" data-act="openControl" data-id="'+g.id+'"><span class="mono" style="color:#60a5fa">'+g.id+'</span><div style="min-width:0"><div style="font-weight:600;font-size:13px;color:#fff;margin-bottom:3px">'+esc(g.threat)+'</div><div style="font-size:12px;color:#94a3b8;text-wrap:pretty">'+esc(g.control)+'</div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><span class="sevchip" style="'+sevStyle(g.sev)+'">'+g.sev+'</span><span class="chip" style="background:rgba(34,211,238,.1);color:#22d3ee;border:1px solid rgba(34,211,238,.25)">'+g.pillar+'</span><span class="chip mono" style="background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.25)">'+layerName(g.layer)+'</span></div></div><span style="font-size:11.5px;color:#475569;white-space:nowrap">Review →</span></div>';
   });
   html += '</div>';
-  // checklists
-  html += '<div class="panel" style="overflow:hidden"><div class="panel-h"><div class="t">Checklists</div></div>';
-  CHECKLISTS.forEach(c => {
-    const badgeStyle = c[3]==='in progress' ? 'background:rgba(59,130,246,.13);color:#60a5fa;border:1px solid rgba(59,130,246,.3)' : 'background:#131b27;color:#64748b;border:1px solid #1e2836';
-    html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #16202e"><div style="min-width:0;flex:1"><div style="font-size:12.5px;color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c[1]+'</div><div class="mono" style="font-size:11px;color:#475569">'+c[0]+'</div></div><div class="mono" style="font-size:11.5px;color:#64748b">'+c[2]+' items</div><span class="chip" style="'+badgeStyle+'">'+c[3]+'</span></div>';
+  // checklists — real per-checklist reviewed/gap counts, click to filter the library
+  const cls = checklistCounts();
+  const total = cls.reduce((a,c)=>a+c.count,0);
+  html += '<div class="panel" style="overflow:hidden"><div class="panel-h"><div class="t">Checklists</div><div style="margin-left:auto;font-size:11.5px;color:#64748b">'+total+' controls</div></div>';
+  cls.forEach(c => {
+    const statusLabel = c.gaps?'at risk':(c.reviewed===c.count&&c.reviewed)?'complete':c.reviewed?'in progress':'not run';
+    const sc = c.gaps?['239,68,68','#ef4444']:c.reviewed?['59,130,246','#60a5fa']:['100,116,139','#64748b'];
+    html += '<div class="row-hover" data-act="gotoCl" data-cl="'+c.cl+'" style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #16202e;cursor:pointer"><div style="min-width:0;flex:1"><div style="font-size:12.5px;color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.title+'</div><div class="mono" style="font-size:11px;color:#475569">'+c.cl+'</div></div><div class="mono" style="font-size:11.5px;color:#64748b">'+c.reviewed+'/'+c.count+'</div><span class="chip" style="background:rgba('+sc[0]+',.12);color:'+sc[1]+';border:1px solid rgba('+sc[0]+',.26)">'+statusLabel+'</span></div>';
   });
-  html += '<div style="padding:12px 18px;font-size:11.5px;color:#475569">117 controls · 6 checklists · loaded from the Cinch MCP server</div></div>';
+  html += '<div style="padding:12px 18px;font-size:11.5px;color:#475569">'+total+' controls · 6 checklists · live from docs-site/data/full.json</div></div>';
   html += '</div></div>';
   return html;
 }
@@ -518,11 +575,12 @@ function viewAssess(){
   const failN = ctl.filter(c=>st.status[c.id]==='fail').length;
   const naN = ctl.filter(c=>st.status[c.id]==='na').length;
 
+  const N = ctl.length;
   let html = '<div class="fade">';
-  html += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px"><div style="flex:1;height:6px;border-radius:99px;background:#16202e;overflow:hidden;display:flex"><div style="height:100%;background:#22c55e;width:'+(passN/25*100)+'%"></div><div style="height:100%;background:#ef4444;width:'+(failN/25*100)+'%"></div><div style="height:100%;background:#334155;width:'+(naN/25*100)+'%"></div></div><div class="mono" style="font-size:12px;color:#64748b;white-space:nowrap">'+reviewed.length+' / 25 reviewed</div></div>';
+  html += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px"><div style="flex:1;height:6px;border-radius:99px;background:#16202e;overflow:hidden;display:flex"><div style="height:100%;background:#22c55e;width:'+(passN/N*100)+'%"></div><div style="height:100%;background:#ef4444;width:'+(failN/N*100)+'%"></div><div style="height:100%;background:#334155;width:'+(naN/N*100)+'%"></div></div><div class="mono" style="font-size:12px;color:#64748b;white-space:nowrap">'+reviewed.length+' / '+N+' reviewed</div></div>';
   html += '<div style="display:grid;grid-template-columns:1fr 290px;gap:20px;align-items:start">';
   // control card
-  html += '<div class="panel" style="padding:24px 26px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap"><span class="mono" style="font:700 15px/1 \'JetBrains Mono\';color:#60a5fa">'+cur.id+'</span><span class="sevchip" style="'+sevStyle(cur.sev)+'">'+cur.sev+'</span><span class="chip" style="background:rgba(34,211,238,.1);color:#22d3ee;border:1px solid rgba(34,211,238,.25)">'+cur.pillar+'</span><span class="chip mono" style="background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.25)">'+layerName(cur.layer)+'</span><span style="margin-left:auto;font-size:11.5px;color:#475569">Control '+(st.idx+1)+' of 25 · '+cur.pillar+'</span></div>';
+  html += '<div class="panel" style="padding:24px 26px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap"><span class="mono" style="font:700 15px/1 \'JetBrains Mono\';color:#60a5fa">'+cur.id+'</span><span class="sevchip" style="'+sevStyle(cur.sev)+'">'+cur.sev+'</span><span class="chip" style="background:rgba(34,211,238,.1);color:#22d3ee;border:1px solid rgba(34,211,238,.25)">'+cur.pillar+'</span><span class="chip mono" style="background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.25)">'+layerName(cur.layer)+'</span><span style="margin-left:auto;font-size:11.5px;color:#475569">Control '+(st.idx+1)+' of '+N+' · '+cur.pillar+'</span></div>';
   html += '<div class="label-tag">Threat</div><h2 style="margin:0 0 18px;font-size:21px;font-weight:700;color:#fff;line-height:1.3;letter-spacing:-.01em;text-wrap:pretty">'+esc(cur.threat)+'</h2>';
   html += '<div class="label-tag">Required control</div><p style="margin:0 0 18px;font-size:14.5px;color:#cbd5e1;line-height:1.6;text-wrap:pretty">'+esc(cur.control)+'</p>';
   html += '<div style="border-left:2px solid #22c55e;background:#111a26;border-radius:0 6px 6px 0;padding:12px 16px;margin-bottom:18px"><div style="font:600 10px/1 Inter,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#22c55e;margin-bottom:6px">Verify</div><div style="font-size:13px;color:#94a3b8;line-height:1.6;text-wrap:pretty">'+esc(cur.verify)+'</div></div>';
@@ -536,7 +594,7 @@ function viewAssess(){
   html += '<div style="margin-left:auto;display:flex;gap:8px"><button class="act-btn" data-act="prev">Back</button><button class="act-btn" data-act="next" style="border-color:#2e3d52">Next control</button></div>';
   html += '</div><div class="label-tag" style="margin-bottom:7px">Evidence</div><textarea class="note" data-input="onNote" placeholder="Paste the artifact, policy path, or test output that proves this — attached to the exported report.">'+esc(state.notes[cur.id]||'')+'</textarea></div></div>';
   // rail
-  html += '<div class="panel" style="overflow:hidden;max-height:calc(100vh - 200px);display:flex;flex-direction:column"><div style="padding:12px 16px;border-bottom:1px solid #1e2836;font:600 10px/1 Inter,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#475569">Agent containment · 25</div><div style="overflow:auto">';
+  html += '<div class="panel" style="overflow:hidden;max-height:calc(100vh - 200px);display:flex;flex-direction:column"><div style="padding:12px 16px;border-bottom:1px solid #1e2836;font:600 10px/1 Inter,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#475569">Agent containment · '+N+'</div><div style="overflow:auto">';
   ctl.forEach((c,i) => {
     const s = st.status[c.id];
     const col = s==='pass'?'#22c55e':s==='fail'?'#ef4444':s==='na'?'#334155':'#1e2836';
@@ -547,19 +605,22 @@ function viewAssess(){
 }
 
 function filteredListHTML(){
-  const st = state; const ctl = C();
+  const st = state; const all = ALL();
   const q = st.q.trim().toLowerCase();
-  const filtered = ctl.filter(c => (st.sev==='all'||c.sev===st.sev) && (!q || (c.id+' '+c.threat+' '+c.control+' '+c.verify+' '+c.pillar).toLowerCase().includes(q)));
-  const count = filtered.length + ' of 25 agent-containment controls' + (q ? ' matching “'+st.q+'”' : '');
+  const filtered = all.filter(c => (st.cl==='all'||c.checklist===st.cl) && (st.sev==='all'||c.sev===st.sev) && (!q || (c.id+' '+c.threat+' '+c.control+' '+c.verify+' '+c.sources.join(' ')+' '+c.pillar+' '+c.checklist).toLowerCase().includes(q)));
+  const clTitle = st.cl==='all' ? '' : ' in '+(CL_META.find(m=>m[0]===st.cl)||[,''])[1];
+  const count = filtered.length + ' of ' + all.length + ' controls' + clTitle + (q ? ' matching “'+st.q+'”' : '');
   let list = '';
   filtered.forEach(c => {
     const chip = statusChip(st.status[c.id]);
     const open = st.openId===c.id;
+    const cs = st.status[c.id];
+    const title = (CL_META.find(m=>m[0]===c.checklist)||[,'',c.checklist])[1];
     list += '<div class="ctrl-card"><div class="ctrl-head" data-act="toggleOpen" data-id="'+c.id+'"><span class="mono" style="color:#60a5fa">'+c.id+'</span><div style="min-width:0"><div style="font-weight:600;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.threat)+'</div><div style="font-size:12px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.control)+'</div></div><div style="display:flex;align-items:center;gap:8px"><span class="chip" style="'+chip.style+'">'+chip.label+'</span><span class="sevchip" style="'+sevStyle(c.sev)+'">'+c.sev+'</span></div></div>';
     if(open){
-      list += '<div style="padding:0 18px 18px 92px;border-top:1px solid #16202e"><div style="border-left:2px solid #22c55e;background:#111a26;border-radius:0 6px 6px 0;padding:11px 15px;margin:14px 0"><div style="font:600 10px/1 Inter,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#22c55e;margin-bottom:5px">Verify</div><div style="font-size:12.5px;color:#94a3b8;line-height:1.6">'+esc(c.verify)+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip" style="background:rgba(34,211,238,.1);color:#22d3ee;border:1px solid rgba(34,211,238,.25)">'+c.pillar+'</span><span class="chip mono" style="background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.25)">'+layerName(c.layer)+'</span>';
+      list += '<div style="padding:0 18px 18px 92px;border-top:1px solid #16202e"><div style="border-left:2px solid #22c55e;background:#111a26;border-radius:0 6px 6px 0;padding:11px 15px;margin:14px 0"><div style="font:600 10px/1 Inter,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#22c55e;margin-bottom:5px">Verify</div><div style="font-size:12.5px;color:#94a3b8;line-height:1.6">'+esc(c.verify)+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"><span class="chip" style="background:rgba(148,163,184,.1);color:#94a3b8;border:1px solid rgba(148,163,184,.25)">'+title+'</span>'+(c.pillar?'<span class="chip" style="background:rgba(34,211,238,.1);color:#22d3ee;border:1px solid rgba(34,211,238,.25)">'+esc(c.pillar)+'</span>':'')+(c.layer?'<span class="chip mono" style="background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.25)">'+layerName(c.layer)+'</span>':'');
       c.sources.forEach(s => { list += '<span class="chip-mono">'+esc(s)+'</span>'; });
-      list += '</div></div>';
+      list += '</div><div style="display:flex;gap:6px"><button class="act-btn" data-act="set" data-id="'+c.id+'" data-val="pass" style="'+btn(cs==='pass','#22c55e','34,197,94')+'">Enforced</button><button class="act-btn" data-act="set" data-id="'+c.id+'" data-val="fail" style="'+btn(cs==='fail','#ef4444','239,68,68')+'">Gap</button><button class="act-btn" data-act="set" data-id="'+c.id+'" data-val="na" style="'+btn(cs==='na','#94a3b8','148,163,184')+'">N/A</button></div></div>';
     }
     list += '</div>';
   });
@@ -567,10 +628,15 @@ function filteredListHTML(){
 }
 function viewControls(){
   const {count} = filteredListHTML();
-  let html = '<div class="fade"><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap"><div style="position:relative;flex:1;min-width:260px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" style="position:absolute;left:12px;top:11px"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input class="search" data-input="onQ" value="'+esc(state.q)+'" placeholder="Search threats, controls, verification steps…"></div>';
+  const total = ALL().length;
+  let html = '<div class="fade"><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap"><div style="position:relative;flex:1;min-width:260px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" style="position:absolute;left:12px;top:11px"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input class="search" data-input="onQ" value="'+esc(state.q)+'" placeholder="Search all '+total+' controls — threats, controls, verification, sources…"></div>';
   ['all','critical','high'].forEach(s => {
     const label = s==='all'?'All severities':s.charAt(0).toUpperCase()+s.slice(1);
     html += '<button class="sev-filter '+(state.sev===s?'on':'')+'" data-act="setSev" data-sev="'+s+'">'+label+'</button>';
+  });
+  html += '</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"><button class="sev-filter '+(state.cl==='all'?'on':'')+'" data-act="setCl" data-cl="all">All '+total+'</button>';
+  checklistCounts().forEach(c => {
+    html += '<button class="sev-filter '+(state.cl===c.cl?'on':'')+'" data-act="setCl" data-cl="'+c.cl+'">'+c.title+' · '+c.count+'</button>';
   });
   html += '</div><div id="ctrl-count" style="font-size:12px;color:#64748b;margin-bottom:12px">'+count+'</div><div id="ctrl-list" style="display:flex;flex-direction:column;gap:8px"></div></div>';
   return html;
@@ -692,17 +758,17 @@ function render(){
 
   if(st.exportOpen){
     const {reviewed, gapsList, critGaps} = compute();
-    html += '<div class="modal-overlay" data-act="toggleExport"><div class="modal" data-act="stop"><div style="padding:20px 24px;border-bottom:1px solid #1e2836"><div style="font-weight:700;font-size:15px;color:#fff">Export evidence pack</div><div style="font-size:12.5px;color:#64748b">checkout-agent-prod · '+reviewed.length+' controls reviewed · '+gapsList.length+' open gaps</div></div><div style="padding:20px 24px;display:flex;flex-direction:column;gap:10px">';
+    const total = ALL().length;
+    html += '<div class="modal-overlay" data-act="toggleExport"><div class="modal" data-act="stop"><div style="padding:20px 24px;border-bottom:1px solid #1e2836"><div style="font-weight:700;font-size:15px;color:#fff">Export evidence pack</div><div style="font-size:12.5px;color:#64748b">checkout-agent-prod · '+reviewed.length+'/'+total+' controls reviewed · '+gapsList.length+' open gaps ('+critGaps+' critical)</div></div><div style="padding:20px 24px;display:flex;flex-direction:column;gap:10px">';
     const items = [
-      ['Control assessment report', reviewed.length+' controls with verification results and evidence notes','PDF'],
-      ['Framework crosswalk appendix','NIST AI RMF · OWASP · CUSTODY · LASM mappings with status','PDF'],
-      ['Machine-readable results','Signed JSON for CI gating and re-assessment diffs','JSON'],
-      ['Open gap register', critGaps+' critical, '+(gapsList.length-critGaps)+' high — with owners and verification steps','CSV']
+      ['exportReport','Assessment report','Score, CUSTODY pillar coverage, open-gap table and NIST AI RMF crosswalk — print to PDF','PDF'],
+      ['exportJSON','Machine-readable results','Full assessment state for CI gating and re-assessment diffs','JSON'],
+      ['exportCSV','Control register','All '+total+' controls with status, severity, threat, verification, sources and evidence','CSV']
     ];
     items.forEach(e => {
-      html += '<div style="display:flex;align-items:center;gap:12px;border:1px solid #1e2836;border-radius:8px;background:#111a26;padding:13px 15px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M4 12l5 5L20 6"></path></svg><div style="flex:1;min-width:0"><div style="font-size:12.5px;color:#e2e8f0">'+e[0]+'</div><div style="font-size:11.5px;color:#64748b">'+e[1]+'</div></div><span class="mono" style="font-size:11px;color:#475569">'+e[2]+'</span></div>';
+      html += '<button data-act="'+e[0]+'" style="display:flex;align-items:center;gap:12px;border:1px solid #1e2836;border-radius:8px;background:#111a26;padding:13px 15px;cursor:pointer;text-align:left;width:100%;color:inherit;font:inherit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 3v12 M7 10l5 5 5-5 M5 21h14"></path></svg><div style="flex:1;min-width:0"><div style="font-size:12.5px;color:#e2e8f0">'+e[1]+'</div><div style="font-size:11.5px;color:#64748b">'+e[2]+'</div></div><span class="mono" style="font-size:11px;color:#475569">'+e[3]+'</span></button>';
     });
-    html += '</div><div style="padding:16px 24px;border-top:1px solid #1e2836;display:flex;gap:10px;justify-content:flex-end"><button class="hbtn hbtn-ghost" data-act="toggleExport">Cancel</button><button class="hbtn hbtn-primary" data-act="toggleExport">Generate pack</button></div></div></div>';
+    html += '</div><div style="padding:16px 24px;border-top:1px solid #1e2836;display:flex;gap:10px;justify-content:flex-end"><button class="hbtn hbtn-ghost" data-act="toggleExport">Close</button><button class="hbtn hbtn-primary" data-act="exportAll">Download all</button></div></div></div>';
   }
   document.getElementById('console-root').innerHTML = html;
   if(st.view==='controls'){ renderFilteredList(); }
@@ -734,11 +800,17 @@ document.addEventListener('click', e => {
   else if(a==='railGo'){ state.idx = parseInt(t.dataset.idx,10); render(); }
   else if(a==='set') set(t.dataset.id, t.dataset.val);
   else if(a==='prev'){ state.idx = Math.max(0, state.idx-1); render(); }
-  else if(a==='next'){ state.idx = Math.min(24, state.idx+1); render(); }
+  else if(a==='next'){ state.idx = Math.min(C().length-1, state.idx+1); render(); }
   else if(a==='setSev'){ state.sev = t.dataset.sev; render(); renderFilteredList(); }
+  else if(a==='setCl'){ state.cl = t.dataset.cl; state.openId=null; render(); renderFilteredList(); }
+  else if(a==='gotoCl'){ state.cl = t.dataset.cl; state.openId=null; state.view='controls'; render(); renderFilteredList(); }
   else if(a==='toggleOpen'){ state.openId = state.openId===t.dataset.id?null:t.dataset.id; renderFilteredList(); }
   else if(a==='setCell'){ state.cell = t.dataset.cell; render(); }
   else if(a==='toggleExport'){ state.exportOpen = !state.exportOpen; render(); }
+  else if(a==='exportReport'){ exportReport(); }
+  else if(a==='exportJSON'){ exportJSON(); }
+  else if(a==='exportCSV'){ exportCSV(); }
+  else if(a==='exportAll'){ exportJSON(); exportCSV(); exportReport(); }
   else if(a==='copyInstall'||a==='copyMcp'){ copyText(t.dataset.copy, t); }
 });
 document.addEventListener('input', e => {
@@ -755,6 +827,78 @@ function copyText(text, btn){
   }).catch(()=>{});
 }
 
+/* ── Exports (real, client-side downloads + print-to-PDF) ── */
+function download(name, content, mime){
+  const blob = new Blob([content], {type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function stamp(){ return new Date().toISOString().replace(/[:.]/g,'-').slice(0,19); }
+function exportJSON(){
+  const {score, reviewed, gapsList, critGaps} = compute();
+  const all = ALL();
+  const pack = {
+    schema:'cinch-assessment/v1',
+    generated_at: new Date().toISOString(),
+    deployment:'checkout-agent-prod',
+    source:'docs-site/data/full.json',
+    summary:{ containment_score:score, reviewed:reviewed.length, total:all.length, open_gaps:gapsList.length, critical_gaps:critGaps },
+    checklists: checklistCounts().map(c=>({name:c.cl,title:c.title,count:c.count,reviewed:c.reviewed,gaps:c.gaps})),
+    results: all.map(c => ({
+      id:c.id, checklist:c.checklist, severity:c.sev, pillar:c.pillar, lasm_layer:c.layerFull,
+      threat:c.threat, control:c.control, verification:c.verify, sources:c.sources,
+      status: state.status[c.id]||'unreviewed', evidence: state.notes[c.id]||''
+    }))
+  };
+  download('cinch-assessment-'+stamp()+'.json', JSON.stringify(pack,null,2), 'application/json');
+}
+function exportCSV(){
+  const all = ALL();
+  const escCSV = v => '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const rows = [['checklist','id','severity','status','pillar','lasm_layer','threat','control','verification','sources','evidence']];
+  all.forEach(c => rows.push([c.checklist,c.id,c.sev,state.status[c.id]||'unreviewed',c.pillar,c.layerFull,c.threat,c.control,c.verify,c.sources.join('; '),state.notes[c.id]||'']));
+  const csv = rows.map(r => r.map(escCSV).join(',')).join('\r\n');
+  download('cinch-control-register-'+stamp()+'.csv', csv, 'text/csv;charset=utf-8');
+}
+function exportReport(){
+  const {score, ringColor, reviewed, gapsList, critGaps} = compute();
+  const all = ALL();
+  const cls = checklistCounts();
+  const ac = AC();
+  const pillars = PILLARS.map(p => {
+    const items = ac.filter(c=>c.pillar===p[0]);
+    const pass = items.filter(c=>state.status[c.id]==='pass').length;
+    return {name:p[0], desc:p[1], pass, total:items.length||0};
+  });
+  const nist = NIST.map(n => {
+    const fails = n[2].filter(id=>state.status[id]==='fail').length;
+    const unrev = n[2].filter(id=>!state.status[id]).length;
+    const label = n[2].length===0?'—':fails?'At risk':unrev?'Partial':'Satisfied';
+    return {code:n[0], req:n[1], note:n[3], ids:n[2], label};
+  });
+  const H = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const css = '*{box-sizing:border-box}body{font:13px/1.5 Inter,Helvetica,Arial,sans-serif;color:#111;margin:32px 40px}h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;border-bottom:2px solid #111;padding-bottom:4px;margin:28px 0 12px}.muted{color:#666}.mono{font-family:JetBrains Mono,Menlo,monospace}.tile b{font-size:20px;display:block}.score{font-size:40px;font-weight:700;color:'+ringColor+'}table{width:100%;border-collapse:collapse;margin:8px 0 20px}th,td{text-align:left;border:1px solid #ddd;padding:6px 8px;vertical-align:top}th{background:#f4f5f7;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.sev-crit{color:#b91c1c;font-weight:700}.sev-high{color:#b45309;font-weight:700}.bar{height:8px;background:#eee;border-radius:99px;overflow:hidden}.bar>span{display:block;height:100%;background:#16a34a}.tag{display:inline-block;border:1px solid #ccc;border-radius:4px;padding:1px 6px;margin:1px;font:11px monospace}.foot{margin-top:32px;color:#999;font-size:11px;border-top:1px solid #eee;padding-top:8px}@media print{body{margin:12mm}}';
+  const gapsRows = gapsList.length ? gapsList.map(g => '<tr><td class=mono>'+H(g.id)+'</td><td class="'+(g.sev==='critical'?'sev-crit':'sev-high')+'">'+H(g.sev)+'</td><td>'+H(g.threat)+'</td><td>'+H(g.control)+'</td><td>'+H(state.notes[g.id]||'')+'</td></tr>').join('') : '<tr><td colspan=5 class=muted>No open gaps.</td></tr>';
+  const pillarRows = pillars.map(p => '<tr><td>'+H(p.name)+'</td><td>'+H(p.desc)+'</td><td>'+p.pass+'/'+p.total+'</td><td><div class=bar><span style=width:'+(p.total?p.pass/p.total*100:0)+'%></span></div></td></tr>').join('');
+  const nistRows = nist.map(n => '<tr><td class=mono>'+H(n.code)+'</td><td>'+H(n.req)+'</td><td>'+n.ids.map(id=>'<span class=tag>'+H(id)+'</span>').join(' ')+'</td><td>'+H(n.label)+'</td></tr>').join('');
+  const clRows = cls.map(c => '<tr><td>'+H(c.title)+'</td><td class=mono>'+H(c.cl)+'</td><td>'+c.reviewed+'/'+c.count+'</td><td>'+(c.gaps||0)+'</td></tr>').join('');
+  const doc = '<!DOCTYPE html><html><head><meta charset=utf-8><title>Cinch Assessment Report</title><style>'+css+'</style></head><body>'+
+    '<h1>Cinch — AI Agent Containment Assessment</h1><div class=muted>Deployment: checkout-agent-prod · Generated: '+new Date().toISOString()+' · Source: docs-site/data/full.json</div>'+
+    '<div style="margin-top:16px"><div class=score>'+score+'%</div><div class=muted>weighted containment score · '+reviewed.length+'/'+all.length+' controls reviewed · '+gapsList.length+' open gaps ('+critGaps+' critical)</div></div>'+
+    '<h2>Checklists</h2><table><tr><th>Checklist</th><th>ID</th><th>Reviewed</th><th>Gaps</th></tr>'+clRows+'</table>'+
+    '<h2>CUSTODY pillar coverage</h2><table><tr><th>Pillar</th><th>Focus</th><th>Enforced</th><th>Coverage</th></tr>'+pillarRows+'</table>'+
+    '<h2>Open gaps</h2><table><tr><th>ID</th><th>Severity</th><th>Threat</th><th>Required control</th><th>Evidence / note</th></tr>'+gapsRows+'</table>'+
+    '<h2>NIST AI RMF crosswalk</h2><table><tr><th>Subcategory</th><th>Requirement</th><th>Mapped controls</th><th>Status</th></tr>'+nistRows+'</table>'+
+    '<div class=foot>Cinch — CC BY 4.0 · cinch-ai-security · report generated client-side from the live full.json catalog</div>'+
+    '</body></html>';
+  const w = window.open('', '_blank');
+  if(!w){ alert('Pop-up blocked — allow pop-ups for the Cinch console to print the report.'); return; }
+  w.document.open(); w.document.write(doc); w.document.close(); w.focus();
+  setTimeout(function(){ w.print(); }, 300);
+}
+
 /* ── Mode ── */
 function showMode(mode){
   const m = document.getElementById('marketing'), c = document.getElementById('console');
@@ -764,7 +908,7 @@ function showMode(mode){
 }
 
 /* ── Marketing pillars (from data) ── */
-(function renderMktPillars(){
+function renderMktPillars(){
   const ctl = C();
   const el = document.getElementById('mkt-pillars');
   if(!el) return;
@@ -772,10 +916,15 @@ function showMode(mode){
     const ids = ctl.filter(c=>c.pillar===p[0]).map(c=>c.id.replace('AC-','')).join(' · ');
     return '<div class="pillar"><h4>'+p[0]+'</h4><p>'+p[1]+'</p><div class="ids">'+ids+'</div></div>';
   }).join('');
-})();
+}
 
-/* deep link */
-if(location.hash==='#console' || new URLSearchParams(location.search).get('mode')==='console'){ showMode('console'); }
+/* ── Init: load the live catalog, derive the LASM grid, then render ── */
+(async function init(){
+  await loadData();
+  buildLayers();
+  renderMktPillars();
+  if(location.hash==='#console' || new URLSearchParams(location.search).get('mode')==='console'){ showMode('console'); }
+})();
 </script>
 </body>
 </html>
