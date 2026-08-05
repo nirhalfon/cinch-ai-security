@@ -1,0 +1,1186 @@
+{
+  "schema": "cinch-assessment/1",
+  "generated": "example-assessment",
+  "deployment": "checkout-agent-prod",
+  "summary": {
+    "score": 81,
+    "reviewed": 24,
+    "total": 117,
+    "applicable": 116,
+    "not_applicable": 1,
+    "unreviewed": 92,
+    "completeness": 21,
+    "enforced": 19,
+    "gaps": 5,
+    "critical_gaps": 2,
+    "high_gaps": 3,
+    "grade": "D",
+    "label": "At risk",
+    "meaning": "A single bad model decision can plausibly reach production systems.",
+    "capped_by": "an unenforced critical control caps the grade regardless of score"
+  },
+  "coverage": {
+    "checklists": [
+      {
+        "name": "agent-containment",
+        "total": 25,
+        "enforced": 19,
+        "gaps": 5,
+        "reviewed": 24,
+        "ratio": 76
+      },
+      {
+        "name": "agent-environment",
+        "total": 11,
+        "enforced": 0,
+        "gaps": 0,
+        "reviewed": 0,
+        "ratio": 0
+      },
+      {
+        "name": "harness-engineering",
+        "total": 25,
+        "enforced": 0,
+        "gaps": 0,
+        "reviewed": 0,
+        "ratio": 0
+      },
+      {
+        "name": "red-team",
+        "total": 20,
+        "enforced": 0,
+        "gaps": 0,
+        "reviewed": 0,
+        "ratio": 0
+      },
+      {
+        "name": "supply-chain",
+        "total": 15,
+        "enforced": 0,
+        "gaps": 0,
+        "reviewed": 0,
+        "ratio": 0
+      },
+      {
+        "name": "system-hardening",
+        "total": 21,
+        "enforced": 0,
+        "gaps": 0,
+        "reviewed": 0,
+        "ratio": 0
+      }
+    ],
+    "custody": [
+      {
+        "name": "Conditions of Release",
+        "total": 4,
+        "enforced": 4,
+        "gaps": 0,
+        "reviewed": 4,
+        "ratio": 100
+      },
+      {
+        "name": "Dependency",
+        "total": 3,
+        "enforced": 1,
+        "gaps": 1,
+        "reviewed": 2,
+        "ratio": 33
+      },
+      {
+        "name": "Operational Controls",
+        "total": 13,
+        "enforced": 4,
+        "gaps": 1,
+        "reviewed": 5,
+        "ratio": 31
+      },
+      {
+        "name": "Supervision",
+        "total": 4,
+        "enforced": 4,
+        "gaps": 0,
+        "reviewed": 4,
+        "ratio": 100
+      },
+      {
+        "name": "Traceability",
+        "total": 4,
+        "enforced": 2,
+        "gaps": 0,
+        "reviewed": 2,
+        "ratio": 50
+      },
+      {
+        "name": "Untrusted Input",
+        "total": 4,
+        "enforced": 2,
+        "gaps": 2,
+        "reviewed": 4,
+        "ratio": 50
+      },
+      {
+        "name": "Yield",
+        "total": 4,
+        "enforced": 2,
+        "gaps": 1,
+        "reviewed": 3,
+        "ratio": 50
+      },
+      {
+        "name": "unmapped",
+        "total": 81,
+        "enforced": 0,
+        "gaps": 0,
+        "reviewed": 0,
+        "ratio": 0
+      }
+    ],
+    "lasm": [
+      {
+        "name": "L1",
+        "total": 2,
+        "enforced": 1,
+        "gaps": 0,
+        "reviewed": 1,
+        "ratio": 50
+      },
+      {
+        "name": "L2",
+        "total": 1,
+        "enforced": 1,
+        "gaps": 0,
+        "reviewed": 1,
+        "ratio": 100
+      },
+      {
+        "name": "L3",
+        "total": 2,
+        "enforced": 1,
+        "gaps": 1,
+        "reviewed": 2,
+        "ratio": 50
+      },
+      {
+        "name": "L4",
+        "total": 5,
+        "enforced": 4,
+        "gaps": 1,
+        "reviewed": 5,
+        "ratio": 80
+      },
+      {
+        "name": "L5",
+        "total": 3,
+        "enforced": 1,
+        "gaps": 1,
+        "reviewed": 2,
+        "ratio": 33
+      },
+      {
+        "name": "L6",
+        "total": 17,
+        "enforced": 5,
+        "gaps": 2,
+        "reviewed": 7,
+        "ratio": 29
+      },
+      {
+        "name": "L7",
+        "total": 6,
+        "enforced": 6,
+        "gaps": 0,
+        "reviewed": 6,
+        "ratio": 100
+      },
+      {
+        "name": "unmapped",
+        "total": 81,
+        "enforced": 0,
+        "gaps": 0,
+        "reviewed": 0,
+        "ratio": 0
+      }
+    ]
+  },
+  "insights": [
+    {
+      "severity": "critical",
+      "title": "2 critical containment controls unenforced",
+      "detail": "Until these are closed, a single manipulated or mistaken model decision can reach production systems: AC-006, AC-019."
+    },
+    {
+      "severity": "high",
+      "title": "Assessment is 21% complete",
+      "detail": "The 81% score only covers 24 of 116 applicable controls. Unreviewed controls are unknown risk, not accepted risk."
+    },
+    {
+      "severity": "high",
+      "title": "Weakest CUSTODY pillar: Operational Controls (4/13 enforced)",
+      "detail": "1 gap sits in this pillar. Capability accretion is pillar-shaped: an agent that is contained everywhere else still inherits authority through the weak one."
+    },
+    {
+      "severity": "medium",
+      "title": "Gaps cluster at LASM layer L6 (2 open)",
+      "detail": "A control at another layer will not detect an attack at this one. Clustered gaps mean this layer currently has no depth."
+    },
+    {
+      "severity": "medium",
+      "title": "5 checklists not started",
+      "detail": "No control reviewed in: agent-environment, harness-engineering, red-team, supply-chain, system-hardening. The score says nothing about these areas."
+    }
+  ],
+  "recommendations": [
+    {
+      "rank": 1,
+      "id": "AC-006",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "phase": "now",
+      "threat": "Indirect prompt injection: external data contains malicious instructions",
+      "action": "Separate data from instructions in agent context; sandbox retrieval and parsing",
+      "verification": "Agent architecture separates instruction channel from data channel. Retrieved content parsed in isolated context.",
+      "pillar": "Untrusted Input",
+      "layer": "L4 Tool Execution",
+      "frameworks": [
+        "OWASP Top 10 LLM LLM01",
+        "CUSTODY Untrusted Input"
+      ],
+      "evidence": "Retrieval output is concatenated into the system turn in orchestrator.py:214 \u2014 no channel separation. Ticket AGT-3391."
+    },
+    {
+      "rank": 2,
+      "id": "AC-019",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "phase": "now",
+      "threat": "Data exfiltration: agent transmits sensitive data to external destinations",
+      "action": "Default-deny egress, allowlisted gateway, DLP, request-size limits",
+      "verification": "No direct internet access. All outbound traffic routes through allowlisted proxy/gateway. DLP rules inspect outbound content.",
+      "pillar": "Operational Controls",
+      "layer": "L6 Environment",
+      "frameworks": [
+        "System-Hardening-Against-AI-Threats",
+        "CUSTODY Operational Controls",
+        "OWASP LLM02-Sensitive Info Disclosure"
+      ],
+      "evidence": "Egress is default-allow on the prod node pool; only DNS is filtered. Needs an allowlisted gateway before next release."
+    },
+    {
+      "rank": 3,
+      "id": "AC-008",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "phase": "next",
+      "threat": "Memory poisoning: long-term or session memory manipulated by injected content",
+      "action": "Memory validation, source labeling, retention limits, controlled write access",
+      "verification": "Agent memory store applies write controls. Entries carry source labels and timestamps. Retention policies enforced.",
+      "pillar": "Untrusted Input",
+      "layer": "L3 Memory",
+      "frameworks": [
+        "LASM L3 Memory",
+        "CUSTODY Untrusted Input",
+        "OWASP Agentic AI"
+      ],
+      "evidence": "Session memory accepts retrieved content without source labels; retention unbounded. Ticket AGT-3402."
+    },
+    {
+      "rank": 4,
+      "id": "AC-021",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "phase": "next",
+      "threat": "Cross-agent compromise: one agent reads another agent's memory or tokens",
+      "action": "Separate identities, namespaces, storage, queues, and network policies per agent",
+      "verification": "Each agent class runs under separate identity with separate credentials. Storage, queues, and network policies isolated.",
+      "pillar": "Dependency",
+      "layer": "L5 Integration",
+      "frameworks": [
+        "CUSTODY Dependency",
+        "LASM L5 Integration",
+        "OWASP Agentic AI"
+      ],
+      "evidence": "Two agent classes share one service account in staging; prod split is planned for the next infra sprint."
+    },
+    {
+      "rank": 5,
+      "id": "AC-023",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "phase": "next",
+      "threat": "Persistence: agent modifies startup scripts, scheduled tasks, or system packages",
+      "action": "Immutable images, read-only system paths, deny service creation, drift detection",
+      "verification": "Agent runs from immutable container image. System paths read-only. Service creation denied. Drift detection monitors for unauthorized changes.",
+      "pillar": "Yield",
+      "layer": "L6 Environment",
+      "frameworks": [
+        "System-Hardening-Against-AI-Threats",
+        "CUSTODY Yield"
+      ],
+      "evidence": "No teardown drill has been run since the June rebuild \u2014 procedure exists but is unverified."
+    }
+  ],
+  "action_plan": [
+    {
+      "phase": "now",
+      "window": "this week",
+      "goal": "Close every critical containment gap before the next production release.",
+      "exit_criterion": "0 critical gaps; each closure has a verification note attached.",
+      "control_ids": [
+        "AC-006",
+        "AC-019"
+      ],
+      "count": 2
+    },
+    {
+      "phase": "next",
+      "window": "this sprint",
+      "goal": "Remove the high-severity gaps that turn a contained incident into a broad one.",
+      "exit_criterion": "0 high gaps, or an accepted-risk record naming the owner and expiry.",
+      "control_ids": [
+        "AC-008",
+        "AC-021",
+        "AC-023"
+      ],
+      "count": 3
+    },
+    {
+      "phase": "later",
+      "window": "this quarter",
+      "goal": "Finish the long tail and keep the assessment complete as the deployment changes.",
+      "exit_criterion": "Every applicable control is reviewed and re-assessed on each material change.",
+      "control_ids": [],
+      "count": 0
+    },
+    {
+      "phase": "complete-the-assessment",
+      "window": "before sign-off",
+      "goal": "Review the remaining 92 applicable controls.",
+      "exit_criterion": "Completeness at 100%; every control enforced, a gap, or explicitly not applicable.",
+      "control_ids": [],
+      "count": 92
+    }
+  ],
+  "unknown_control_ids": [],
+  "results": [
+    {
+      "id": "AC-001",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-002",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-003",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-004",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-005",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-006",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "fail",
+      "evidence": "Retrieval output is concatenated into the system turn in orchestrator.py:214 \u2014 no channel separation. Ticket AGT-3391."
+    },
+    {
+      "id": "AC-007",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-008",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "status": "fail",
+      "evidence": "Session memory accepts retrieved content without source labels; retention unbounded. Ticket AGT-3402."
+    },
+    {
+      "id": "AC-009",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-010",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-011",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-012",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-013",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-014",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "status": "na",
+      "evidence": ""
+    },
+    {
+      "id": "AC-015",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-016",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-017",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-018",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-019",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "fail",
+      "evidence": "Egress is default-allow on the prod node pool; only DNS is filtered. Needs an allowlisted gateway before next release."
+    },
+    {
+      "id": "AC-020",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-021",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "status": "fail",
+      "evidence": "Two agent classes share one service account in staging; prod split is planned for the next infra sprint."
+    },
+    {
+      "id": "AC-022",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-023",
+      "checklist": "agent-containment",
+      "severity": "high",
+      "status": "fail",
+      "evidence": "No teardown drill has been run since the June rebuild \u2014 procedure exists but is unverified."
+    },
+    {
+      "id": "AC-024",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AC-025",
+      "checklist": "agent-containment",
+      "severity": "critical",
+      "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "AE-001",
+      "checklist": "agent-environment",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "AE-002",
+      "checklist": "agent-environment",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "AE-003",
+      "checklist": "agent-environment",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "AE-004",
+      "checklist": "agent-environment",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "AE-005",
+      "checklist": "agent-environment",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "AE-006",
+      "checklist": "agent-environment",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "AE-007",
+      "checklist": "agent-environment",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "AE-008",
+      "checklist": "agent-environment",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "AE-009",
+      "checklist": "agent-environment",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "AE-010",
+      "checklist": "agent-environment",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "AE-011",
+      "checklist": "agent-environment",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-001",
+      "checklist": "harness-engineering",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-002",
+      "checklist": "harness-engineering",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-003",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-004",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-005",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-006",
+      "checklist": "harness-engineering",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-007",
+      "checklist": "harness-engineering",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-008",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-009",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-010",
+      "checklist": "harness-engineering",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-011",
+      "checklist": "harness-engineering",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-012",
+      "checklist": "harness-engineering",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-013",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-014",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-015",
+      "checklist": "harness-engineering",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-016",
+      "checklist": "harness-engineering",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-017",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-018",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-019",
+      "checklist": "harness-engineering",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-020",
+      "checklist": "harness-engineering",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-021",
+      "checklist": "harness-engineering",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-022",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-023",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-024",
+      "checklist": "harness-engineering",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-025",
+      "checklist": "harness-engineering",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-001",
+      "checklist": "red-team",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-002",
+      "checklist": "red-team",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-003",
+      "checklist": "red-team",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-004",
+      "checklist": "red-team",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-005",
+      "checklist": "red-team",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-006",
+      "checklist": "red-team",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-007",
+      "checklist": "red-team",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-008",
+      "checklist": "red-team",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-009",
+      "checklist": "red-team",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-010",
+      "checklist": "red-team",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-011",
+      "checklist": "red-team",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-012",
+      "checklist": "red-team",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-013",
+      "checklist": "red-team",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-014",
+      "checklist": "red-team",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-015",
+      "checklist": "red-team",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-016",
+      "checklist": "red-team",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-017",
+      "checklist": "red-team",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-018",
+      "checklist": "red-team",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-019",
+      "checklist": "red-team",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "RT-020",
+      "checklist": "red-team",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-001",
+      "checklist": "supply-chain",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-002",
+      "checklist": "supply-chain",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-003",
+      "checklist": "supply-chain",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-004",
+      "checklist": "supply-chain",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-005",
+      "checklist": "supply-chain",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-006",
+      "checklist": "supply-chain",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-007",
+      "checklist": "supply-chain",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-008",
+      "checklist": "supply-chain",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-009",
+      "checklist": "supply-chain",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-010",
+      "checklist": "supply-chain",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-011",
+      "checklist": "supply-chain",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-012",
+      "checklist": "supply-chain",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-013",
+      "checklist": "supply-chain",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-014",
+      "checklist": "supply-chain",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SC-015",
+      "checklist": "supply-chain",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-001",
+      "checklist": "system-hardening",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-002",
+      "checklist": "system-hardening",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-003",
+      "checklist": "system-hardening",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-004",
+      "checklist": "system-hardening",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-005",
+      "checklist": "system-hardening",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-006",
+      "checklist": "system-hardening",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-007",
+      "checklist": "system-hardening",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-008",
+      "checklist": "system-hardening",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-009",
+      "checklist": "system-hardening",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-010",
+      "checklist": "system-hardening",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-011",
+      "checklist": "system-hardening",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-012",
+      "checklist": "system-hardening",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-013",
+      "checklist": "system-hardening",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-014",
+      "checklist": "system-hardening",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-015",
+      "checklist": "system-hardening",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-016",
+      "checklist": "system-hardening",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-017",
+      "checklist": "system-hardening",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-018",
+      "checklist": "system-hardening",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-019",
+      "checklist": "system-hardening",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-020",
+      "checklist": "system-hardening",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "SH-021",
+      "checklist": "system-hardening",
+      "severity": "medium",
+      "status": "unreviewed",
+      "evidence": ""
+    }
+  ]
+}

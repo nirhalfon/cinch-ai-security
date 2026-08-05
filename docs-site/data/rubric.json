@@ -1,0 +1,37 @@
+{
+  "schema": "cinch-rubric/1",
+  "description": "Scoring and analysis rules for a Cinch containment assessment. Single source of truth: read by the Python engine (src/cinch/assess.py) and by the dashboard engine (docs-site/index.html). Change a rule here and both follow.",
+  "severity_weights": { "critical": 3, "high": 2, "medium": 1, "low": 1 },
+  "grades": [
+    { "min": 90, "grade": "A", "label": "Contained", "meaning": "Controls are enforced across every pillar; residual risk is accepted and evidenced." },
+    { "min": 80, "grade": "B", "label": "Largely contained", "meaning": "No critical exposure; a small number of non-critical gaps remain scheduled." },
+    { "min": 70, "grade": "C", "label": "Conditional", "meaning": "Deployable only with compensating controls and a dated remediation plan." },
+    { "min": 60, "grade": "D", "label": "At risk", "meaning": "A single bad model decision can plausibly reach production systems." },
+    { "min": 0, "grade": "F", "label": "Uncontained", "meaning": "The environment does not constrain the agent; do not run it against production." }
+  ],
+  "grade_caps": [
+    { "min_critical_gaps": 1, "max_grade": "D", "reason": "an unenforced critical control caps the grade regardless of score" },
+    { "min_critical_gaps": 3, "max_grade": "F", "reason": "three or more critical gaps means the containment story does not hold" }
+  ],
+  "completeness_floor": 0.6,
+  "phases": {
+    "now": {
+      "severities": ["critical"],
+      "goal": "Close every critical containment gap before the next production release.",
+      "window": "this week",
+      "exit": "0 critical gaps; each closure has a verification note attached."
+    },
+    "next": {
+      "severities": ["high"],
+      "goal": "Remove the high-severity gaps that turn a contained incident into a broad one.",
+      "window": "this sprint",
+      "exit": "0 high gaps, or an accepted-risk record naming the owner and expiry."
+    },
+    "later": {
+      "severities": ["medium", "low"],
+      "goal": "Finish the long tail and keep the assessment complete as the deployment changes.",
+      "window": "this quarter",
+      "exit": "Every applicable control is reviewed and re-assessed on each material change."
+    }
+  }
+}

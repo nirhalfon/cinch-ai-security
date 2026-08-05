@@ -55,6 +55,12 @@ packages = ["src/cinch"]
 "checklists" = "cinch/data/checklists"
 "mappings" = "cinch/data/mappings"
 "protocols" = "cinch/data/protocols"
+# Ship the assessment console so `cinch console` works from a pip install, not
+# just from a checkout.
+"docs-site/index.html" = "cinch/data/console/index.html"
+"docs-site/data/full.json" = "cinch/data/console/data/full.json"
+"docs-site/data/rubric.json" = "cinch/data/console/data/rubric.json"
+"docs-site/data/assessment.json" = "cinch/data/console/data/assessment.json"
 
 [tool.ruff]
 line-length = 100

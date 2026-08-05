@@ -19,6 +19,9 @@ EXPECTED_TOOLS = {
     "mapping_lookup",
     "threat_search",
     "checklist_diff",
+    # Evidence tools: probe a running agent, then grade the bundle.
+    "evidence_collect",
+    "evidence_verify",
 }
 
 
@@ -35,7 +38,7 @@ def _payload(result):
 
 # ── list_tools ──
 
-def test_list_tools_advertises_all_seven():
+def test_list_tools_advertises_every_tool():
     tools = _run(APP.list_tools())
     names = {t.name for t in tools}
     assert names == EXPECTED_TOOLS

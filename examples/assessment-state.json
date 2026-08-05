@@ -1,0 +1,38 @@
+{
+  "_comment": "Example Cinch assessment state. 'status' is one of pass | fail | na per control id; 'evidence' is a free-text note per control. Feed it to `cinch assess --state examples/assessment-state.json`, or load it in the console with Load assessment. This is the same worked example the dashboard opens with.",
+  "deployment": "checkout-agent-prod",
+  "status": {
+    "AC-001": "pass",
+    "AC-002": "pass",
+    "AC-003": "pass",
+    "AC-004": "pass",
+    "AC-005": "pass",
+    "AC-006": "fail",
+    "AC-007": "pass",
+    "AC-008": "fail",
+    "AC-009": "pass",
+    "AC-010": "pass",
+    "AC-011": "pass",
+    "AC-012": "pass",
+    "AC-013": "pass",
+    "AC-014": "na",
+    "AC-015": "pass",
+    "AC-016": "pass",
+    "AC-017": "pass",
+    "AC-018": "pass",
+    "AC-019": "fail",
+    "AC-020": "pass",
+    "AC-021": "fail",
+    "AC-022": "pass",
+    "AC-023": "fail",
+    "AC-024": "pass",
+    "AC-025": "pass"
+  },
+  "evidence": {
+    "AC-006": "Retrieval output is concatenated into the system turn in orchestrator.py:214 — no channel separation. Ticket AGT-3391.",
+    "AC-019": "Egress is default-allow on the prod node pool; only DNS is filtered. Needs an allowlisted gateway before next release.",
+    "AC-008": "Session memory accepts retrieved content without source labels; retention unbounded. Ticket AGT-3402.",
+    "AC-021": "Two agent classes share one service account in staging; prod split is planned for the next infra sprint.",
+    "AC-023": "No teardown drill has been run since the June rebuild — procedure exists but is unverified."
+  }
+}

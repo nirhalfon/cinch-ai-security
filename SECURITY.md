@@ -25,8 +25,8 @@ assessment within **14 days**.
 In scope:
 - The MCP server (`src/cinch/`) — e.g. path traversal, input validation bypasses,
   crashes from malformed tool arguments, log injection.
-- The docs site (`docs-site/`) — e.g. stored XSS via checklist/mapping/template
-  content rendered by the SPA.
+- The console (`docs-site/`) — e.g. stored XSS via checklist/mapping/template
+  content or an assessment pack rendered by the dashboard.
 - CI workflows and dependency manifests.
 
 Out of scope:
@@ -50,8 +50,11 @@ Only the latest released version and the `main` branch receive security fixes.
   independently.
 - **No `yaml.load`:** YAML is parsed exclusively with `yaml.safe_load`.
 - **ReDoS resistance:** threat-search queries are `re.escape`d and length-capped.
-- **XSS hardening:** the docs SPA HTML-escapes all data-field text before
-  interpolation into `innerHTML`.
+- **XSS hardening:** the console HTML-escapes all data-field text — including
+  everything read from a loaded assessment pack — before interpolation into
+  `innerHTML`.
+- **Local console server:** `cinch console` binds `127.0.0.1` by default, serves
+  GET/HEAD only, is rooted at the console directory, and never writes.
 - **Audit logging:** tool calls are logged to stderr with argument key/lengths
   only — never argument values.
 - **Supply chain:** `bandit`, `pip-audit`, and `ruff` run in CI on every push.

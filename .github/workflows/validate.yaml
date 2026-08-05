@@ -115,3 +115,22 @@ jobs:
             git --no-pager diff docs-site/data/full.json | head -40
             exit 1
           fi
+
+      # The console loads real results from this pack, so a stale one would show a
+      # grade that no longer matches the catalog or the rubric.
+      - name: Verify console assessment pack is in sync
+        run: |
+          python3 scripts/build_assessment.py
+          if ! git diff --exit-code docs-site/data/assessment.json; then
+            echo "::error::docs-site/data/assessment.json is out of sync. Run 'python scripts/build_assessment.py' and commit the result."
+            git --no-pager diff docs-site/data/assessment.json | head -40
+            exit 1
+          fi
+
+      # Dogfooding: gate the build on the example assessment's own critical gaps
+      # being accounted for. --fail-on never keeps this informational; flip it to
+      # 'critical' on a real deployment's state file to block a release.
+      - name: Assessment gate (informational)
+        run: python3 -m cinch.server assess --state examples/assessment-state.json --fail-on never
+        env:
+          PYTHONPATH: src

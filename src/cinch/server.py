@@ -7,13 +7,18 @@ configured with built-in path-traversal rejection for resource security.
 
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import sys
+from pathlib import Path
 
 import yaml
 from mcp.server.mcpserver.server import MCPServer
 
+from .assess import build_assessment, format_report, read_state
+from .collect import collect as collect_evidence
+from .console import DEFAULT_HOST, DEFAULT_PORT, serve_console
 from .loader import (
     diff_checklists,
     get_checklist_item,
@@ -23,6 +28,8 @@ from .loader import (
     load_protocol,
     search_by_threat,
 )
+from .probes.behaviour import NotAuthorized
+from .verify import verify_bundle, verify_file
 
 APP = MCPServer(
     name="cinch",
@@ -257,6 +264,99 @@ def checklist_diff(a: str, b: str) -> str:
         return _err(str(e))
 
 
+def evidence_collect(
+    host: bool = False,
+    pid: int | None = None,
+    unit: str = "",
+    project_path: str = "",
+    endpoint: str = "",
+    authorized: bool = False,
+    deployment: str = "unnamed-deployment",
+) -> str:
+    """Probe a running agent deployment and return an evidence bundle.
+
+    Runs read-only probes and returns what was actually observed, per control:
+    'pass' (demonstrably enforced), 'fail' (demonstrably not), 'unknown' (could not
+    tell — never counted as enforced). Feed the bundle to evidence_verify to get a
+    grade, insights and an action plan.
+
+    Self-audit warning: when an agent calls this tool about its own host, the result
+    is self-attestation, not assurance. The bundle records that ('provenance.
+    self_attested') and the assessment raises it as a critical finding. Independent
+    evidence needs `cinch collect` run out of band under a separate identity — see
+    the 'evidence-collect' protocol.
+
+    Args:
+        host: Probe the host/container running the agent (AE-001..AE-011).
+        pid: PID of the agent process to inspect. Omit and the collector inspects
+            itself, which is flagged as self-attestation.
+        unit: systemd unit name of the agent, used to resolve its MainPID.
+        project_path: Deployment directory to inspect — MCP tool grants, container
+            manifests, CI workflows, dependency pinning, secret handling.
+        endpoint: Running agent's HTTP endpoint for behavioural probes (prompt
+            injection, prompt leakage, tool enumeration, rate bounds).
+        authorized: Must be true to probe `endpoint`. Confirms you are permitted to
+            send adversarial input to that target.
+        deployment: Name recorded in the bundle.
+    """
+    _setup_logging()
+    _log_call(
+        "evidence_collect",
+        {"host": host, "pid": pid, "unit": unit, "project_path": project_path,
+         "endpoint": endpoint, "authorized": authorized},
+    )
+    kinds = []
+    if host or pid or unit:
+        kinds.append("host")
+    if project_path:
+        kinds.append("project")
+    if endpoint:
+        kinds.append("behaviour")
+    if not kinds:
+        return _err(
+            "choose at least one target: host=true (optionally with pid/unit), "
+            "project_path, or endpoint"
+        )
+    try:
+        bundle = collect_evidence(
+            kinds=tuple(kinds),
+            pid=pid,
+            unit=unit or None,
+            project_path=Path(project_path) if project_path else None,
+            endpoint=endpoint or None,
+            authorized=authorized,
+            deployment=deployment,
+            via_mcp=True,  # the requester is an agent — never claimed as independent
+        )
+    except (NotAuthorized, FileNotFoundError, OSError, TypeError, ValueError) as e:
+        return _err(str(e))
+    return json.dumps(bundle, indent=2)
+
+
+def evidence_verify(bundle_json: str, deployment: str = "") -> str:
+    """Grade an evidence bundle: score, letter grade, insights, recommendations, plan.
+
+    Applies the same rubric a human reviewer sees in the console, and reports on the
+    evidence itself as well as the controls — self-attested collection, unsigned
+    bundles, and controls no probe could verify all surface as findings. 'unknown'
+    observations stay unreviewed rather than counting as enforced.
+
+    Args:
+        bundle_json: A 'cinch-evidence/1' bundle, as returned by evidence_collect.
+        deployment: Optional deployment name override.
+    """
+    _setup_logging()
+    _log_call("evidence_verify", {"bundle_json": bundle_json, "deployment": deployment})
+    try:
+        _validate_str(bundle_json, "bundle_json")
+        bundle = json.loads(bundle_json)
+        if not isinstance(bundle, dict) or not isinstance(bundle.get("observations"), list):
+            return _err("bundle_json is not a cinch-evidence/1 bundle with an observations array")
+        return json.dumps(verify_bundle(bundle, deployment=deployment or None), indent=2)
+    except (json.JSONDecodeError, TypeError, ValueError, KeyError) as e:
+        return _err(str(e))
+
+
 # ── Register tools with the MCP server ──
 APP.add_tool(checklist_list, name="checklist_list")
 APP.add_tool(checklist_run, name="checklist_run")
@@ -265,6 +365,8 @@ APP.add_tool(protocol_get, name="protocol_get")
 APP.add_tool(mapping_lookup, name="mapping_lookup")
 APP.add_tool(threat_search, name="threat_search")
 APP.add_tool(checklist_diff, name="checklist_diff")
+APP.add_tool(evidence_collect, name="evidence_collect")
+APP.add_tool(evidence_verify, name="evidence_verify")
 
 
 def serve() -> None:
@@ -273,10 +375,243 @@ def serve() -> None:
     APP.run(transport="stdio")
 
 
-def main() -> None:
-    """CLI entry point."""
+def build_parser() -> argparse.ArgumentParser:
+    """Build the ``cinch`` CLI parser."""
+    parser = argparse.ArgumentParser(
+        prog="cinch",
+        description=(
+            "Cinch — MCP server + cross-harness skills for operating AI agents safely."
+        ),
+    )
+    sub = parser.add_subparsers(dest="command")
+    sub.add_parser("serve", help="run the MCP server over stdio (default)")
+    console_cmd = sub.add_parser(
+        "console",
+        help="serve the assessment console dashboard on localhost",
+    )
+    console_cmd.add_argument(
+        "--port", type=int, default=DEFAULT_PORT, help=f"port (default {DEFAULT_PORT})"
+    )
+    console_cmd.add_argument(
+        "--host", default=DEFAULT_HOST, help=f"bind address (default {DEFAULT_HOST})"
+    )
+    console_cmd.add_argument(
+        "--no-browser", action="store_true", help="do not open a browser window"
+    )
+    console_cmd.add_argument(
+        "--assessment",
+        type=Path,
+        help="assessment result pack to load into the dashboard on open",
+    )
+    assess_cmd = sub.add_parser(
+        "assess",
+        help="grade an assessment state file and emit insights, recommendations, action plan",
+    )
+    assess_cmd.add_argument(
+        "--state",
+        type=Path,
+        required=True,
+        help="assessment state JSON ({'status': {...}, 'evidence': {...}}), or a previously "
+        "exported assessment pack",
+    )
+    assess_cmd.add_argument(
+        "--out", type=Path, help="write the full result pack here (JSON); default is a text report"
+    )
+    assess_cmd.add_argument("--deployment", help="override the deployment name in the pack")
+    assess_cmd.add_argument(
+        "--fail-on",
+        choices=["critical", "high", "any-gap", "never"],
+        default="never",
+        help="exit non-zero when gaps at this level remain (for CI gating)",
+    )
+
+    collect_cmd = sub.add_parser(
+        "collect",
+        help="probe a running agent (host, project, behaviour) and emit an evidence bundle",
+    )
+    collect_cmd.add_argument(
+        "--host", action="store_true", help="probe the host/container running the agent (AE-*)"
+    )
+    collect_cmd.add_argument("--pid", type=int, help="PID of the agent process to inspect")
+    collect_cmd.add_argument("--unit", help="systemd unit of the agent, to resolve its MainPID")
+    collect_cmd.add_argument(
+        "--project", type=Path, help="deployment directory to inspect (MCP config, manifests, CI)"
+    )
+    collect_cmd.add_argument(
+        "--endpoint", help="running agent's HTTP endpoint, for behavioural probes"
+    )
+    collect_cmd.add_argument(
+        "--authorized",
+        action="store_true",
+        help="confirm you are permitted to send adversarial input to --endpoint (required)",
+    )
+    collect_cmd.add_argument("--request-field", default="input", help="request JSON field")
+    collect_cmd.add_argument("--response-field", default="output", help="response JSON field")
+    collect_cmd.add_argument("--deployment", default="unnamed-deployment", help="deployment name")
+    collect_cmd.add_argument("--out", type=Path, help="write the evidence bundle here (JSON)")
+    collect_cmd.add_argument(
+        "--sign-cmd",
+        help="command that signs the bundle from stdin, e.g. 'cosign sign-blob -'. "
+        "Use a key the agent cannot reach.",
+    )
+
+    verify_cmd = sub.add_parser(
+        "verify", help="grade an evidence bundle: insights, recommendations, action plan"
+    )
+    verify_cmd.add_argument("--evidence", type=Path, required=True, help="evidence bundle JSON")
+    verify_cmd.add_argument("--out", type=Path, help="write the assessment pack here (JSON)")
+    verify_cmd.add_argument("--deployment", help="override the deployment name")
+    verify_cmd.add_argument(
+        "--fail-on",
+        choices=["critical", "high", "any-gap", "never"],
+        default="never",
+        help="exit non-zero when gaps at this level remain (for CI gating)",
+    )
+    return parser
+
+
+def _gate(summary: dict, fail_on: str) -> bool:
+    """Return True when the assessment should fail the build."""
+    return (
+        (fail_on == "critical" and summary["critical_gaps"] > 0)
+        or (fail_on == "high" and summary["critical_gaps"] + summary["high_gaps"] > 0)
+        or (fail_on == "any-gap" and summary["gaps"] > 0)
+    )
+
+
+def _run_collect(args: argparse.Namespace) -> int:
+    """Probe a running agent and emit an evidence bundle."""
+    kinds = []
+    if args.host or args.pid or args.unit:
+        kinds.append("host")
+    if args.project:
+        kinds.append("project")
+    if args.endpoint:
+        kinds.append("behaviour")
+    if not kinds:
+        print(
+            "cinch collect: choose at least one target — --host (with optional --pid/--unit), "
+            "--project PATH, or --endpoint URL.",
+            file=sys.stderr,
+        )
+        return 1
+    bundle = collect_evidence(
+        kinds=tuple(kinds),
+        pid=args.pid,
+        unit=args.unit,
+        project_path=args.project,
+        endpoint=args.endpoint,
+        authorized=args.authorized,
+        deployment=args.deployment,
+        sign_cmd=args.sign_cmd.split() if args.sign_cmd else None,
+        request_field=args.request_field,
+        response_field=args.response_field,
+    )
+    c = bundle["counts"]
+    where = args.out or Path("-")
+    if args.out:
+        args.out.write_text(json.dumps(bundle, indent=2) + "\n")
+    else:
+        print(json.dumps(bundle, indent=2))
+    print(
+        f"Collected {c['pass']} pass / {c['fail']} fail / {c['unknown']} unknown across "
+        f"{c['controls']} controls → {where}",
+        file=sys.stderr,
+    )
+    if bundle["provenance"]["self_attested"]:
+        print(
+            "warning: this evidence is self-attested — "
+            + "; ".join(bundle["provenance"]["reasons"])
+            + ". See protocols/evidence-collect.md.",
+            file=sys.stderr,
+        )
+    return 0
+
+
+def _run_verify(args: argparse.Namespace) -> int:
+    """Grade an evidence bundle."""
+    assessment = verify_file(args.evidence, deployment=args.deployment)
+    if args.out:
+        args.out.write_text(json.dumps(assessment, indent=2) + "\n")
+        s = assessment["summary"]
+        print(
+            f"Wrote {args.out} — grade {s['grade']} ({s['label']}), score {s['score']}%, "
+            f"{s['gaps']} open gaps ({s['critical_gaps']} critical).",
+            file=sys.stderr,
+        )
+    else:
+        print(format_report(assessment))
+    if _gate(assessment["summary"], args.fail_on):
+        print(f"cinch verify: failing on --fail-on {args.fail_on}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def _run_assess(args: argparse.Namespace) -> int:
+    """Build an assessment pack from a state file; print or write it."""
+    status, evidence, deployment = read_state(args.state)
+    assessment = build_assessment(
+        status, evidence, deployment=args.deployment or deployment
+    )
+    if args.out:
+        args.out.write_text(json.dumps(assessment, indent=2, sort_keys=False) + "\n")
+        s = assessment["summary"]
+        print(
+            f"Wrote {args.out} — grade {s['grade']} ({s['label']}), score {s['score']}%, "
+            f"{s['gaps']} open gaps ({s['critical_gaps']} critical).",
+            file=sys.stderr,
+        )
+    else:
+        print(format_report(assessment))
+    if assessment["unknown_control_ids"]:
+        print(
+            "warning: ignored unknown control ids: "
+            + ", ".join(assessment["unknown_control_ids"]),
+            file=sys.stderr,
+        )
+    if _gate(assessment["summary"], args.fail_on):
+        print(f"cinch assess: failing on --fail-on {args.fail_on}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI entry point. Returns a process exit code."""
+    args = build_parser().parse_args(argv)
+    if args.command == "console":
+        try:
+            serve_console(
+                port=args.port,
+                host=args.host,
+                open_browser=not args.no_browser,
+                assessment=args.assessment,
+            )
+        except (FileNotFoundError, OSError) as exc:
+            print(f"cinch console: {exc}", file=sys.stderr)
+            return 1
+        return 0
+    if args.command == "assess":
+        try:
+            return _run_assess(args)
+        except (FileNotFoundError, OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            print(f"cinch assess: {exc}", file=sys.stderr)
+            return 1
+    if args.command == "collect":
+        try:
+            return _run_collect(args)
+        except (NotAuthorized, FileNotFoundError, OSError, TypeError, ValueError) as exc:
+            print(f"cinch collect: {exc}", file=sys.stderr)
+            return 1
+    if args.command == "verify":
+        try:
+            return _run_verify(args)
+        except (FileNotFoundError, OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            print(f"cinch verify: {exc}", file=sys.stderr)
+            return 1
+    # No subcommand behaves as `serve` so existing MCP client configs keep working.
     serve()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
