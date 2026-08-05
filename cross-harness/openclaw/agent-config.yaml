@@ -1,0 +1,66 @@
+# OpenClaw Agent Configuration — Cinch
+# Copy this file to your OpenClaw agent configuration directory.
+# These instructions tell the OpenClaw agent to follow Cinch protocols.
+
+agent:
+  name: cinch
+  version: "1.0.0"
+  description: >
+    OpenClaw agent configured with Cinch protocols.
+    Follows CUSTODY containment, LASM threat model, and NIST AI RMF.
+
+# Security constraints enforced at the infrastructure level.
+# These are NOT agent prompts — they are policy declarations that
+# the harness should enforce externally.
+security:
+  # Conditions of Release
+  authorized_tools: []  # Populated per-deployment
+  authorized_data_sources: []  # Populated per-deployment
+  scope_boundaries: []  # Populated per-deployment
+
+  # Supervision
+  approval_required_for:
+    - infrastructure_changes
+    - data_deletion
+    - external_communications
+    - financial_transactions
+
+  # Operational Controls
+  max_tool_calls_per_task: 100
+  max_execution_time_seconds: 300
+  max_token_budget: 50000
+  max_recursion_depth: 10
+  default_deny_egress: true
+  allowed_egress_destinations: []  # Populated per-deployment
+
+  # Identity
+  run_as_non_root: true
+  no_new_privileges: true
+  drop_capabilities: true
+  use_secret_broker: true
+
+  # Yield
+  ephemeral_environment: true
+  auto_revoke_credentials: true
+  immutable_system_paths: true
+
+# Logging
+logging:
+  log_all_actions: true
+  log_to_immutable_store: true
+  include_trace_ids: true
+  include_delegation_chain: true
+
+# Checklist to verify before deployment
+pre_deployment_checklist:
+  - AC-001  # Authorization artifact exists
+  - AC-003  # Tool allowlist configured
+  - AC-005  # Instruction hierarchy enforced
+  - AC-009  # Human approval gates configured
+  - AC-013  # Immutable logging configured
+  - AC-016  # Secret broker configured
+  - AC-018  # Non-root execution confirmed
+  - AC-019  # Default-deny egress configured
+  - AC-023  # Immutable container image
+  - AC-024  # Ephemeral environment confirmed
+  - AC-025  # Auto credential revocation confirmed

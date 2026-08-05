@@ -1,0 +1,341 @@
+# System Hardening Checklist
+# Validates infrastructure and host-level security for AI harness deployments
+
+metadata:
+  id: system-hardening
+  name: "System Hardening Checklist"
+  version: "1.0.0"
+  description: >
+    Validates infrastructure and host-level security for AI harness
+    deployments. Covers OS hardening, network security, access control,
+    container security, and cryptographic controls.
+  categories:
+    - id: os-hardening
+      name: "OS Hardening"
+      weight: 30
+    - id: network-security
+      name: "Network Security"
+      weight: 25
+    - id: access-control
+      name: "Access Control & Identity"
+      weight: 25
+    - id: container-security
+      name: "Container & Runtime Security"
+      weight: 20
+
+checklist:
+  # ── OS Hardening ───────────────────────────────────────────────────
+  - id: SH-001
+    category: os-hardening
+    severity: critical
+    title: "Minimal base image with no unnecessary packages installed"
+    description: >
+      The host or container base image must include only packages required for
+      the harness workload. Development tools, debuggers, and unnecessary
+      services must be removed.
+    validation:
+      type: automated
+      evidence_required: "Image build Dockerfile and package audit scan results"
+    references:
+      - "CIS Benchmark — OS Hardening"
+      - "NIST SP 800-123 — Server Security"
+
+  - id: SH-002
+    category: os-hardening
+    severity: critical
+    title: "Filesystem integrity monitoring enabled"
+    description: >
+      Critical system files and configuration directories must be monitored
+      for unauthorized changes using file integrity monitoring (FIM) tools
+      such as AIDE, Tripwire, or OS-level checksums.
+    validation:
+      type: automated
+      evidence_required: "FIM configuration and baseline integrity report"
+    references:
+      - "NIST SP 800-53 — SI-7 Software Integrity"
+      - "CIS Benchmark — Filesystem Integrity"
+
+  - id: SH-003
+    category: os-hardening
+    severity: high
+    title: "Kernel parameters hardened via sysctl"
+    description: >
+      Kernel parameters must be set to harden the system: disable IP forwarding
+      unless required, enable SYN cookies, disable source routing, and restrict
+      core dumps.
+    validation:
+      type: automated
+      evidence_required: "sysctl configuration file and verification script output"
+    references:
+      - "CIS Benchmark — Kernel Parameters"
+      - "NIST SP 800-53 — SC-3 Security Function Isolation"
+
+  - id: SH-004
+    category: os-hardening
+    severity: high
+    title: "Unnecessary services and daemons disabled"
+    description: >
+      Only services required for the harness must be enabled. SSH, cron, and
+      other common services must be disabled or tightly restricted if not
+      strictly needed.
+    validation:
+      type: automated
+      evidence_required: "Service audit results showing only required services active"
+    references:
+      - "CIS Benchmark — Service Configuration"
+      - "NIST SP 800-123 — Server Security"
+
+  - id: SH-005
+    category: os-hardening
+    severity: high
+    title: "File permissions follow principle of least privilege"
+    description: >
+      All files, especially configuration files and secrets, must have
+      restrictive permissions. World-readable and world-writable files must be
+      eliminated. SUID/SGID binaries must be audited and minimized.
+    validation:
+      type: automated
+      evidence_required: "Permission audit scan results and SUID/SGID inventory"
+    references:
+      - "NIST SP 800-53 — AC-3 Access Enforcement"
+      - "CIS Benchmark — File Permissions"
+
+  - id: SH-006
+    category: os-hardening
+    severity: medium
+    title: "Secure boot chain verified"
+    description: >
+      Where supported, UEFI Secure Boot must be enabled. Boot parameters must
+      restrict module loading and protect the boot chain from tampering.
+    validation:
+      type: manual_review
+      evidence_required: "Secure Boot status verification and boot parameter documentation"
+    references:
+      - "NIST SP 800-53 — SI-6 Security Function Verification"
+      - "UEFI Secure Boot specification"
+
+  # ── Network Security ────────────────────────────────────────────────
+  - id: SH-007
+    category: network-security
+    severity: critical
+    title: "Default-deny firewall policy on all interfaces"
+    description: >
+      All network interfaces must use a default-deny firewall policy. Only
+      explicitly required ports and services may be allowed through ingress
+      and egress rules.
+    validation:
+      type: automated
+      evidence_required: "Firewall rule set and policy audit results"
+    references:
+      - "NIST SP 800-53 — SC-7 Boundary Protection"
+      - "CIS Benchmark — Firewall Configuration"
+
+  - id: SH-008
+    category: network-security
+    severity: critical
+    title: "TLS 1.2+ enforced for all communications"
+    description: >
+      All network communications — API calls, agent-to-harness, harness-to-
+      tool, and dashboard access — must use TLS 1.2 or higher. TLS 1.0 and
+      1.1 must be disabled.
+    validation:
+      type: automated
+      evidence_required: "TLS configuration and SSL Labs scan results"
+    references:
+      - "NIST SP 800-52r2 — TLS Guidelines"
+      - "CIS Benchmark — TLS Configuration"
+
+  - id: SH-009
+    category: network-security
+    severity: high
+    title: "Mutual TLS or token-based authentication between services"
+    description: >
+      Inter-service communication within the harness stack must use mutual TLS
+      (mTLS) or short-lived tokens with rotation. No unauthenticated internal
+      endpoints.
+    validation:
+      type: automated
+      evidence_required: "mTLS or token configuration and inter-service auth test results"
+    references:
+      - "NIST SP 800-53 — IA-9 Service Identification"
+      - "OWASP API Security — API1 Broken Object-Level Authorization"
+
+  - id: SH-010
+    category: network-security
+    severity: high
+    title: "DNS resolution restricted to approved resolvers"
+    description: >
+      Agent and harness workloads must use approved DNS resolvers. DNS-over-
+      HTTPS or DNS-over-TLS is preferred. Wildcard or public DNS must not be
+      used for internal resolution.
+    validation:
+      type: automated
+      evidence_required: "DNS resolver configuration and resolution test results"
+    references:
+      - "NIST SP 800-53 — SC-7 Boundary Protection"
+      - "CIS Benchmark — DNS Configuration"
+
+  - id: SH-011
+    category: network-security
+    severity: medium
+    title: "Network segmentation isolates harness from production"
+    description: >
+      The harness environment must be in a separate network segment from
+      production workloads. Network policies must prevent lateral movement
+      between segments.
+    validation:
+      type: manual_review
+      evidence_required: "Network topology diagram and segmentation policy"
+    references:
+      - "NIST SP 800-53 — SC-7 Boundary Protection"
+      - "CIS Benchmark — Network Segmentation"
+
+  # ── Access Control & Identity ───────────────────────────────────────
+  - id: SH-012
+    category: access-control
+    severity: critical
+    title: "Role-based access control enforced for all harness users"
+    description: >
+      Access to the harness dashboard, API, and configuration must be governed
+      by role-based access control (RBAC). No shared or generic accounts.
+    validation:
+      type: automated
+      evidence_required: "RBAC policy configuration and access review results"
+    references:
+      - "NIST SP 800-53 — AC-2 Account Management"
+      - "OWASP ASVS — V1 Access Control"
+
+  - id: SH-013
+    category: access-control
+    severity: critical
+    title: "Multi-factor authentication required for administrative access"
+    description: >
+      All administrative access to the harness — dashboard, API, SSH, and
+      configuration management — must require multi-factor authentication
+      (MFA).
+    validation:
+      type: manual_review
+      evidence_required: "MFA configuration and enforcement verification"
+    references:
+      - "NIST SP 800-53 — IA-2 Identification and Authentication"
+      - "NIST SP 800-63B — Digital Identity Guidelines"
+
+  - id: SH-014
+    category: access-control
+    severity: high
+    title: "Service accounts use short-lived credentials with rotation"
+    description: >
+      All service accounts used by the harness or agent must use short-lived
+      credentials (e.g., tokens with TTL ≤ 1 hour). Credentials must be
+      rotated automatically. No long-lived API keys.
+    validation:
+      type: automated
+      evidence_required: "Service account credential configuration and rotation logs"
+    references:
+      - "NIST SP 800-53 — IA-5 Authenticator Management"
+      - "OWASP ASVS — V2 Authentication"
+
+  - id: SH-015
+    category: access-control
+    severity: high
+    title: "Privileged operations require approval workflow"
+    description: >
+      Any operation that modifies harness configuration, deploys new agents,
+      or accesses sensitive data must go through an approval workflow with
+      at least one additional reviewer.
+    validation:
+      type: manual_review
+      evidence_required: "Approval workflow configuration and recent audit trail"
+    references:
+      - "NIST SP 800-53 — AC-3 Access Enforcement"
+      - "OWASP ASVS — V1 Architecture"
+
+  - id: SH-016
+    category: access-control
+    severity: medium
+    title: "Session timeouts and idle disconnect enforced"
+    description: >
+      Dashboard and API sessions must have configurable timeouts. Idle
+      sessions must be disconnected after a defined period. No indefinite
+      sessions.
+    validation:
+      type: automated
+      evidence_required: "Session timeout configuration and test results"
+    references:
+      - "NIST SP 800-53 — AC-12 Session Termination"
+      - "OWASP ASVS — V3 Session Management"
+
+  # ── Container & Runtime Security ───────────────────────────────────
+  - id: SH-017
+    category: container-security
+    severity: critical
+    title: "Containers run as non-root with dropped capabilities"
+    description: >
+      All harness and agent containers must run as non-root users with all
+      Linux capabilities dropped except those explicitly required. No
+      privileged containers in production.
+    validation:
+      type: automated
+      evidence_required: "Container security policy and runtime scan results"
+    references:
+      - "CIS Docker Benchmark — Container Runtime"
+      - "NIST SP 800-190 — Container Security"
+
+  - id: SH-018
+    category: container-security
+    severity: high
+    title: "Read-only root filesystem for agent containers"
+    description: >
+      Agent containers must use a read-only root filesystem. Any writable
+      paths must be explicitly declared as tmpfs or volume mounts.
+    validation:
+      type: automated
+      evidence_required: "Container filesystem configuration and verification"
+    references:
+      - "CIS Docker Benchmark — Container Runtime"
+      - "NIST SP 800-190 — Container Security"
+
+  - id: SH-019
+    category: container-security
+    severity: high
+    title: "Container images scanned for vulnerabilities before deployment"
+    description: >
+      All container images must pass vulnerability scanning before deployment.
+      Critical and high CVEs must be resolved or formally accepted before
+      the image is promoted to production.
+    validation:
+      type: automated
+      evidence_required: "Vulnerability scan reports and exception tracking"
+    references:
+      - "NIST SP 800-190 — Container Security"
+      - "CIS Benchmark — Image Scanning"
+
+  - id: SH-020
+    category: container-security
+    severity: medium
+    title: "Seccomp and AppArmor profiles applied to all containers"
+    description: >
+      Every container must run under a seccomp profile that blocks unnecessary
+      syscalls and an AppArmor profile that restricts file and capability
+      access. Default Docker profiles are not sufficient.
+    validation:
+      type: automated
+      evidence_required: "Seccomp and AppArmor profile configurations and test results"
+    references:
+      - "CIS Docker Benchmark — Container Runtime"
+      - "NIST SP 800-190 — Container Security"
+
+  - id: SH-021
+    category: container-security
+    severity: medium
+    title: "Container resource limits prevent resource exhaustion"
+    description: >
+      Every container must have CPU and memory limits set. No container may
+      request unlimited resources. Limits must prevent a single agent from
+      exhausting host resources.
+    validation:
+      type: automated
+      evidence_required: "Resource limit configuration and stress test results"
+    references:
+      - "NIST SP 800-53 — SC-5 Denial of Service Protection"
+      - "CIS Docker Benchmark — Resource Limits"

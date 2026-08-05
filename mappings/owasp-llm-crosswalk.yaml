@@ -1,0 +1,116 @@
+# OWASP Top 10 for LLM Applications Crosswalk
+# Maps OWASP LLM Top 10 risks to Cinch checklist items.
+
+metadata:
+  name: OWASP LLM Top 10 Crosswalk
+  version: "1.0.0"
+  description: >
+    Maps OWASP Top 10 for LLM Applications (2025) risks to Cinch
+    checklist items. Includes Agentic AI supplementary mappings.
+
+mappings:
+  - framework: OWASP LLM
+    control_id: LLM01
+    framework_control_name: "Prompt Injection"
+    checklist_ids:
+      - AC-005
+      - AC-006
+    description: "Instruction hierarchy enforcement and data-instruction separation address both direct and indirect prompt injection"
+
+  - framework: OWASP LLM
+    control_id: LLM02
+    framework_control_name: "Sensitive Information Disclosure"
+    checklist_ids:
+      - AC-004
+      - AC-019
+    description: "Data inventory and default-deny egress prevent sensitive information disclosure"
+
+  - framework: OWASP LLM
+    control_id: LLM03
+    framework_control_name: "Supply Chain Vulnerabilities"
+    checklist_ids:
+      - AC-007
+      - SC-001
+      - SC-002
+    description: "Model provenance verification and supply chain security address supply chain vulnerabilities"
+
+  - framework: OWASP LLM
+    control_id: LLM04
+    framework_control_name: "Data and Model Poisoning"
+    checklist_ids:
+      - AC-008
+      - AC-007
+      - SC-003
+    description: "Memory validation, model provenance, and dataset integrity address poisoning risks"
+
+  - framework: OWASP LLM
+    control_id: LLM05
+    framework_control_name: "Improper Output Handling"
+    checklist_ids:
+      - HE-024
+      - AC-019
+    description: "Error handling policy and egress controls address improper output handling"
+
+  - framework: OWASP LLM
+    control_id: LLM06
+    framework_control_name: "Excessive Agency"
+    checklist_ids:
+      - AC-001
+      - AC-003
+      - AC-009
+      - AC-010
+    description: "Authorization artifacts, tool allowlists, approval gates, and the Agent Rule of One address excessive agency"
+
+  - framework: OWASP LLM
+    control_id: LLM07
+    framework_control_name: "System Prompt Leakage"
+    checklist_ids:
+      - AC-005
+      - AC-006
+    description: "Instruction hierarchy and data-instruction separation reduce system prompt leakage risk"
+
+  - framework: OWASP LLM
+    control_id: LLM08
+    framework_control_name: "Vector and Embedding Weaknesses"
+    checklist_ids:
+      - AC-008
+    description: "Memory validation, source labels, and retention limits address vector store weaknesses"
+
+  - framework: OWASP LLM
+    control_id: LLM09
+    framework_control_name: "Misinformation"
+    checklist_ids:
+      - AC-012
+      - HE-011
+    description: "Stop conditions and comprehensive testing address misinformation risks"
+
+  - framework: OWASP LLM
+    control_id: LLM10
+    framework_control_name: "Unbounded Consumption"
+    checklist_ids:
+      - AC-017
+    description: "Rate limits, quotas, circuit breakers, and recursion limits address unbounded consumption"
+
+  # ── OWASP Agentic AI Supplementary ────────────────────────────
+
+  - framework: OWASP Agentic AI
+    control_id: Agent-01
+    framework_control_name: "Cross-agent compromise"
+    checklist_ids:
+      - AC-021
+    description: "Separate identities, namespaces, and policies per agent address cross-agent compromise"
+
+  - framework: OWASP Agentic AI
+    control_id: Agent-02
+    framework_control_name: "Hidden delegation"
+    checklist_ids:
+      - AC-014
+    description: "Delegation logging and chain-of-action tracing address hidden delegation"
+
+  - framework: OWASP Agentic AI
+    control_id: Agent-03
+    framework_control_name: "Browser sandbox escape"
+    checklist_ids:
+      - AC-018
+      - AC-020
+    description: "Non-root execution and micro-segmentation address browser sandbox escape"

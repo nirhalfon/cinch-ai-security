@@ -1,0 +1,119 @@
+# MITRE ATLAS Crosswalk
+# Maps MITRE ATLAS tactics and techniques to Cinch checklist items.
+
+metadata:
+  name: MITRE ATLAS Crosswalk
+  version: "1.0.0"
+  description: >
+    Maps MITRE ATLAS (Adversarial Threat Landscape for AI Systems) tactics
+    and techniques to Cinch checklist items.
+
+mappings:
+  # ── Reconnaissance ──────────────────────────────────────────
+
+  - framework: MITRE ATLAS
+    control_id: AML.TA0001
+    framework_control_name: "Reconnaissance"
+    checklist_ids:
+      - AC-013
+      - AC-015
+    description: "Immutable logging and separation of duties enable detection of reconnaissance activity"
+
+  # ── Initial Access ───────────────────────────────────────────
+
+  - framework: MITRE ATLAS
+    control_id: AML.TA0002
+    framework_control_name: "Initial Access"
+    checklist_ids:
+      - AC-005
+      - AC-006
+      - AC-007
+    description: "Instruction hierarchy, data separation, and model provenance address initial access vectors"
+
+  # ── ML Attack ───────────────────────────────────────────────
+
+  - framework: MITRE ATLAS
+    control_id: AML.TA0003
+    framework_control_name: "ML Model Access"
+    checklist_ids:
+      - AC-007
+      - SC-001
+      - SC-002
+    description: "Model provenance and supply chain security protect against model access attacks"
+
+  - framework: MITRE ATLAS
+    control_id: AML.T0001
+    framework_control_name: "Poison Training Data"
+    checklist_ids:
+      - AC-007
+      - SC-003
+    description: "Model provenance verification and dataset integrity controls address training data poisoning"
+
+  - framework: MITRE ATLAS
+    control_id: AML.T0010
+    framework_control_name: "Access ML Model Data"
+    checklist_ids:
+      - AC-019
+      - AC-004
+    description: "Default-deny egress and data inventory address model data access attempts"
+
+  # ── Execution ────────────────────────────────────────────────
+
+  - framework: MITRE ATLAS
+    control_id: AML.TA0004
+    framework_control_name: "Execution"
+    checklist_ids:
+      - AC-003
+      - AC-009
+      - AC-018
+    description: "Tool allowlists, human approval gates, and non-root execution constrain execution"
+
+  - framework: MITRE ATLAS
+    control_id: AML.T0043
+    framework_control_name: "Craft Adversarial Data"
+    checklist_ids:
+      - AC-005
+      - AC-006
+    description: "Instruction hierarchy and data-instruction separation address adversarial data crafting"
+
+  # ── Persistence ──────────────────────────────────────────────
+
+  - framework: MITRE ATLAS
+    control_id: AML.TA0005
+    framework_control_name: "Persistence"
+    checklist_ids:
+      - AC-023
+      - AC-024
+    description: "Immutable images and ephemeral environments prevent persistence"
+
+  # ── Defense Evasion ──────────────────────────────────────────
+
+  - framework: MITRE ATLAS
+    control_id: AML.TA0006
+    framework_control_name: "Defense Evasion"
+    checklist_ids:
+      - AC-013
+      - AC-015
+    description: "Immutable logging and separation of duties prevent defense evasion"
+
+  # ── Impact ───────────────────────────────────────────────────
+
+  - framework: MITRE ATLAS
+    control_id: AML.TA0009
+    framework_control_name: "Impact"
+    checklist_ids:
+      - AC-019
+      - AC-016
+      - AC-025
+    description: "Default-deny egress, secret broker, and credential revocation limit impact"
+
+  # ── Exfiltration ─────────────────────────────────────────────
+
+  - framework: MITRE ATLAS
+    control_id: AML.TA0008
+    framework_control_name: "Exfiltration"
+    checklist_ids:
+      - AC-019
+      - AC-004
+      - AC-020
+    description: "Default-deny egress, data inventory, and micro-segmentation address exfiltration"

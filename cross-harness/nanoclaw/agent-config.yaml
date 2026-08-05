@@ -1,0 +1,79 @@
+# NanoClaw Agent Configuration — Cinch
+# Copy this file to your NanoClaw agent configuration directory.
+# These instructions tell the NanoClaw agent to follow Cinch protocols.
+
+agent:
+  name: cinch
+  version: "1.0.0"
+  description: >
+    NanoClaw agent configured with Cinch protocols.
+    Follows CUSTODY containment, LASM threat model, and NIST AI RMF.
+
+# Security policy — enforced by the harness infrastructure
+security_policy:
+  # Core principle: The model proposes; the architecture authorizes and enforces.
+  # These are policy declarations, not prompts.
+
+  # Identity and scope
+  identity:
+    dedicated_service_account: true
+    no_interactive_login: true
+    no_shared_credentials: true
+
+  # Tool governance
+  tools:
+    allowlist_enabled: true
+    allowed_tools: []  # Populated per-deployment
+    parameter_validation: true
+    execution_sandbox: true
+
+  # Network
+  network:
+    default_deny_egress: true
+    allowed_destinations: []  # Populated per-deployment
+    micro_segmentation: true
+    mtls_required: true
+
+  # Approval gates
+  approval:
+    human_in_loop_required:
+      - infrastructure_changes
+      - data_deletion
+      - external_communications
+      - financial_transactions
+
+  # Rate limiting
+  rate_limits:
+    max_tool_calls: 100
+    max_execution_time: 300
+    max_token_budget: 50000
+    max_recursion: 10
+    circuit_breaker: true
+
+  # Logging
+  logging:
+    immutable_store: true
+    trace_ids: true
+    delegation_chain: true
+    separation_of_duties: true
+
+  # Yield
+  yield:
+    ephemeral_environment: true
+    auto_credential_revocation: true
+    immutable_system_paths: true
+    destroy_on_completion: true
+
+# Pre-deployment verification checklist (from agent-containment.yaml)
+pre_deployment_checks:
+  - AC-001  # Authorization artifact
+  - AC-003  # Tool allowlist
+  - AC-005  # Instruction hierarchy
+  - AC-009  # Human approval gates
+  - AC-013  # Immutable logging
+  - AC-016  # Secret broker
+  - AC-018  # Non-root execution
+  - AC-019  # Default-deny egress
+  - AC-023  # Immutable image
+  - AC-024  # Ephemeral environment
+  - AC-025  # Auto credential revocation

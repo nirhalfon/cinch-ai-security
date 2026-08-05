@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cinch - Checklists</title>
+<link rel="stylesheet" href="../css/brand.css">
+<meta name="description" content="Cinch - Checklists. Checklists, protocols, mappings, and MCP server for AI agent security.">
+</head>
+<body>
+<nav id="topnav"><div class="nav-inner">
+<a href="../index.html" class="brand">🛡️ Cinch</a>
+<button id="menu-toggle" aria-label="Menu">☰</button>
+<div id="nav-links"><a href='../index.html'>Home</a>
+    <a href='../pages/checklists.html'>Checklists</a>
+    <a href='../pages/protocols.html'>Protocols</a>
+    <a href='../pages/mappings.html'>Mappings</a>
+    <a href='../pages/skills.html'>Skills</a>
+    <a href='../pages/mcp-server.html'>MCP Server</a>
+    <a href='../pages/threat-model.html'>Threat Model</a>
+    <a href='../pages/quickstart.html'>Quick Start</a>
+    <a href='https://github.com/nirhalfon/cinch-ai-security' target='_blank' rel='noopener' class='gh'>GitHub ↗</a></div>
+</div></nav>
+<main id="app" data-page="checklists"></main>
+<footer><div class="foot-inner">
+<div>🛡️ Cinch — CC BY 4.0</div>
+<div>MCP server + cross-harness skills for building and operating AI agents safely.</div>
+</div></footer>
+<script src="../js/app.js"></script>
+<script>
+(async function() {
+  const app = document.getElementById('app');
+  const page = app.dataset.page;
+  const params = new URLSearchParams(window.location.search);
+  const key = params.get('key') || '';
+  const d = await loadData();
+  const renderer = PAGES[page];
+  if (renderer) {
+    const html = await renderer(key);
+    app.innerHTML = html;
+    document.querySelectorAll('#severity-filter .filter-btn')?.forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#severity-filter .filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const sev = btn.dataset.sev;
+        document.querySelectorAll('.checklist-item').forEach(item => {
+          const tag = item.querySelector('.tag-critical,.tag-high,.tag-medium,.tag-low');
+          const itemSev = tag ? tag.textContent.trim().toLowerCase() : '';
+          item.style.display = (sev==='all' || itemSev===sev) ? '' : 'none';
+        });
+      });
+    });
+    const clTabs = document.getElementById('cl-tabs');
+    if (clTabs) {
+      clTabs.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', async () => {
+          clTabs.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById('cl-content').innerHTML = renderChecklistPage(tab.dataset.cl, d.checklists[tab.dataset.cl]);
+        });
+      });
+    }
+  }
+})();
+document.getElementById('menu-toggle')?.addEventListener('click', () => {
+  document.getElementById('nav-links').classList.toggle('open');
+});
+</script>
+</body></html>

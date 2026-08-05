@@ -1,0 +1,10 @@
+source: docs-site/
+destination: docs/
+includes:
+  - "docs-site/**"
+  - "checklists/*.yaml"
+  - "mappings/*.yaml"
+  - "protocols/*.md"
+  - "skills/*/SKILL.md"
+  - "templates/*.md"
+  - "docs/*.md"

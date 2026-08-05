@@ -1,0 +1,395 @@
+# Harness Engineering Checklist
+# Validates AI harness design, configuration, and operational safety
+
+metadata:
+  id: harness-engineering
+  name: "Harness Engineering Checklist"
+  version: "1.0.0"
+  description: >
+    Validates AI harness design, configuration, and operational safety.
+    Covers architecture, prompt engineering, tool boundaries, runtime controls,
+    and observability.
+  categories:
+    - id: architecture
+      name: "Architecture & Design"
+      weight: 25
+    - id: prompt-engineering
+      name: "Prompt Engineering"
+      weight: 25
+    - id: tool-boundaries
+      name: "Tool & Capability Boundaries"
+      weight: 20
+    - id: runtime-controls
+      name: "Runtime Controls & Limits"
+      weight: 15
+    - id: observability
+      name: "Observability & Monitoring"
+      weight: 15
+
+checklist:
+  # ── Architecture & Design ──────────────────────────────────────────
+  - id: HE-001
+    category: architecture
+    severity: critical
+    title: "Least-privilege principle enforced in harness design"
+    description: >
+      The harness must grant only the minimum capabilities required for the
+      intended task. No broad or unrestricted access to system resources.
+    validation:
+      type: manual_review
+      evidence_required: "Architecture diagram and capability mapping document"
+    references:
+      - "OWASP ASVS v4.2 — V1 Architecture"
+      - "NIST SP 800-53 — AC-6 Least Privilege"
+
+  - id: HE-002
+    category: architecture
+    severity: critical
+    title: "Threat model documented for harness and agent interactions"
+    description: >
+      A threat model (STRIDE or similar) must exist covering the harness,
+      agent, tool interfaces, and data flows. It must be reviewed at each
+      major release.
+    validation:
+      type: manual_review
+      evidence_required: "Threat model document with identified threats and mitigations"
+    references:
+      - "STRIDE threat modeling framework"
+      - "Microsoft SDL threat modeling"
+
+  - id: HE-003
+    category: architecture
+    severity: high
+    title: "Sandbox or container isolation for agent execution"
+    description: >
+      Agent workloads must execute within isolated containers, VMs, or
+      sandboxed environments. Host system access must be mediated and
+      restricted.
+    validation:
+      type: automated
+      evidence_required: "Container runtime configuration and isolation policy"
+    references:
+      - "CIS Docker Benchmark"
+      - "NIST SP 800-53 — SC-3 Security Function Isolation"
+
+  - id: HE-004
+    category: architecture
+    severity: high
+    title: "Network egress restrictions enforced on agent environments"
+    description: >
+      Agent containers must have network policies that restrict outbound
+      connections to only approved endpoints. Default-deny egress is required.
+    validation:
+      type: automated
+      evidence_required: "Network policy manifests and egress allow-list"
+    references:
+      - "Kubernetes NetworkPolicy documentation"
+      - "NIST SP 800-53 — SC-7 Boundary Protection"
+
+  - id: HE-005
+    category: architecture
+    severity: high
+    title: "Secrets management separates credentials from configuration"
+    description: >
+      API keys, tokens, and other secrets must not appear in configuration
+      files, environment variables in plaintext, or source code. A secrets
+      manager or vault must be used.
+    validation:
+      type: automated
+      evidence_required: "Secrets management configuration and scan results showing no hardcoded secrets"
+    references:
+      - "OWASP Top 10 — A02 Cryptographic Failures"
+      - "HashiCorp Vault documentation"
+
+  # ── Prompt Engineering ─────────────────────────────────────────────
+  - id: HE-006
+    category: prompt-engineering
+    severity: critical
+    title: "System prompts include behavioral constraints and refusal policies"
+    description: >
+      System prompts must explicitly define what the agent must NOT do,
+      including refusal policies for harmful, unethical, or out-of-scope
+      requests. Constraints must be specific and unambiguous.
+    validation:
+      type: manual_review
+      evidence_required: "System prompt document with marked constraint sections"
+    references:
+      - "OWASP LLM Top 10 — LLM01 Prompt Injection"
+      - "NIST AI RMF — GOVERN 1.2"
+
+  - id: HE-007
+    category: prompt-engineering
+    severity: critical
+    title: "Prompt injection defenses implemented at multiple layers"
+    description: >
+      Defense-in-depth against prompt injection must include input sanitization,
+      output filtering, and structural separation between instructions and
+      user data. No single bypass should compromise the system.
+    validation:
+      type: hybrid
+      evidence_required: "Defense layer diagram and red-team test results"
+    references:
+      - "OWASP LLM Top 10 — LLM01 Prompt Injection"
+      - "SimPromptons: Prompt injection simulation framework"
+
+  - id: HE-008
+    category: prompt-engineering
+    severity: high
+    title: "Role and persona boundaries prevent privilege escalation"
+    description: >
+      The agent must not be instructed to act as a system administrator,
+      root user, or other privileged entity. Role definitions must scope
+      authority to the task domain only.
+    validation:
+      type: manual_review
+      evidence_required: "System prompt review and role boundary documentation"
+    references:
+      - "OWASP LLM Top 10 — LLM06 Excessive Agency"
+
+      - "NIST SP 800-53 — AC-2 Account Management"
+
+  - id: HE-009
+    category: prompt-engineering
+    severity: high
+    title: "Instruction and data channels are structurally separated"
+    description: >
+      User-provided data must be distinguished from system instructions using
+      delimiters, tags, or separate message roles. The agent must treat data
+      as untrusted content, not as commands.
+    validation:
+      type: manual_review
+      evidence_required: "Prompt template showing structural separation"
+    references:
+      - "OWASP LLM Top 10 — LLM01 Prompt Injection"
+      - "LangChain prompt template best practices"
+
+  - id: HE-010
+    category: prompt-engineering
+    severity: medium
+    title: "Output validation prevents agent from emitting harmful content"
+    description: >
+      All agent outputs destined for end users must pass through an output
+      filter that blocks PII leaks, code execution, and harmful content.
+    validation:
+      type: automated
+      evidence_required: "Output filter configuration and test suite results"
+    references:
+      - "OWASP LLM Top 10 — LLM02 Insecure Output Handling"
+
+  # ── Tool & Capability Boundaries ───────────────────────────────────
+  - id: HE-011
+    category: tool-boundaries
+    severity: critical
+    title: "Tool allow-list restricts agent to approved operations only"
+    description: >
+      The harness must enumerate every tool, API, or capability the agent may
+      access. Any tool not on the allow-list must be inaccessible at runtime.
+    validation:
+      type: automated
+      evidence_required: "Tool allow-list configuration and runtime enforcement logs"
+    references:
+      - "OWASP LLM Top 10 — LLM06 Excessive Agency"
+      - "NIST SP 800-53 — AC-3 Access Enforcement"
+
+  - id: HE-012
+    category: tool-boundaries
+    severity: critical
+    title: "Destructive operations require explicit human approval"
+    description: >
+      Any tool call that deletes data, modifies infrastructure, or sends
+      communications externally must require a human-in-the-loop confirmation
+      before execution.
+    validation:
+      type: manual_review
+      evidence_required: "Approval workflow configuration and audit logs"
+    references:
+      - "NIST SP 800-53 — AC-3 Access Enforcement"
+      - "OWASP LLM Top 10 — LLM06 Excessive Agency"
+
+  - id: HE-013
+    category: tool-boundaries
+    severity: high
+    title: "Tool schemas validate all inputs before execution"
+    description: >
+      Every tool must declare a JSON schema for its inputs. The harness must
+      reject calls with missing, extra, or wrongly-typed parameters before
+      invoking the tool.
+    validation:
+      type: automated
+      evidence_required: "Tool schema definitions and validation test results"
+    references:
+      - "OWASP API Security Top 10 — API8 Security Misconfiguration"
+
+  - id: HE-014
+    category: tool-boundaries
+    severity: high
+    title: "Rate limiting prevents tool abuse or resource exhaustion"
+    description: >
+      Tool invocations must be rate-limited per agent, per session, and
+      globally. Limits must prevent both accidental loops and adversarial
+      resource exhaustion.
+    validation:
+      type: automated
+      evidence_required: "Rate limit configuration and load test results"
+    references:
+      - "OWASP API Security Top 10 — API4 Unrestricted Resource Consumption"
+      - "NIST SP 800-53 — SC-5 Denial of Service Protection"
+
+  - id: HE-015
+    category: tool-boundaries
+    severity: medium
+    title: "Tool error messages do not leak internal system details"
+    description: >
+      Error responses from tools must be sanitized before being returned to
+      the agent. Stack traces, file paths, and database details must be
+      stripped or generalized.
+    validation:
+      type: automated
+      evidence_required: "Error handling configuration and fuzzing test results"
+    references:
+      - "OWASP Top 10 — A05 Security Misconfiguration"
+
+  # ── Runtime Controls & Limits ───────────────────────────────────────
+  - id: HE-016
+    category: runtime-controls
+    severity: critical
+    title: "Execution timeout prevents runaway agent loops"
+    description: >
+      Every agent session must have a hard execution timeout. The harness must
+      terminate the agent and rollback partial changes if the timeout is
+      exceeded.
+    validation:
+      type: automated
+      evidence_required: "Timeout configuration and timeout-recovery test results"
+    references:
+      - "NIST SP 800-53 — SC-5 Denial of Service Protection"
+
+  - id: HE-017
+    category: runtime-controls
+    severity: high
+    title: "Token and cost budgets enforced per session"
+    description: >
+      Each session must have a maximum token budget and estimated cost budget.
+      The harness must abort the session if either budget is exhausted.
+    validation:
+      type: automated
+      evidence_required: "Budget configuration and budget-exhaustion test results"
+    references:
+      - "OWASP LLM Top 10 — LLM10 Unbounded Consumption"
+
+  - id: HE-018
+    category: runtime-controls
+    severity: high
+    title: "Rollback mechanism reverses partial actions on failure"
+    description: >
+      If an agent session fails or is terminated, the harness must be able to
+      roll back any partial changes made by the agent to restore system state.
+    validation:
+      type: manual_review
+      evidence_required: "Rollback procedure documentation and failure-recovery test results"
+    references:
+      - "NIST SP 800-53 — CP-10 System Recovery"
+      - "OWASP LLM Top 10 — LLM06 Excessive Agency"
+
+  - id: HE-019
+    category: runtime-controls
+    severity: medium
+    title: "Agent actions are logged with full provenance"
+    description: >
+      Every tool call, decision, and output must be logged with the agent
+      identity, session ID, timestamp, input, and output. Logs must be
+      tamper-evident.
+    validation:
+      type: automated
+      evidence_required: "Logging configuration and log integrity verification results"
+    references:
+      - "NIST SP 800-53 — AU-2 Audit Events"
+      - "NIST SP 800-53 — AU-10 Non-repudiation"
+
+  - id: HE-020
+    category: runtime-controls
+    severity: medium
+    title: "Circuit breakers halt repeated failures across sessions"
+    description: >
+      The harness must implement circuit breakers that prevent new sessions
+      when failure rates exceed defined thresholds, preventing cascading
+      failures.
+    validation:
+      type: automated
+      evidence_required: "Circuit breaker configuration and failure-injection test results"
+    references:
+      - "NIST SP 800-53 — SC-5 Denial of Service Protection"
+
+  # ── Observability & Monitoring ─────────────────────────────────────
+  - id: HE-021
+    category: observability
+    severity: critical
+    title: "All agent-to-tool interactions are observable and traceable"
+    description: >
+      The harness must provide a complete, queryable record of every
+      agent-to-tool interaction, including the reasoning that led to the
+      call, the parameters, and the response.
+    validation:
+      type: manual_review
+      evidence_required: "Observability architecture and sample trace output"
+    references:
+      - "NIST SP 800-53 — AU-2 Audit Events"
+      - "OpenTelemetry specification"
+
+  - id: HE-022
+    category: observability
+    severity: high
+    title: "Anomaly detection alerts on unusual agent behavior patterns"
+    description: >
+      Monitoring must detect anomalies such as repeated tool failures,
+      unexpected tool combinations, elevated token usage, or deviation from
+      baseline behavior patterns.
+    validation:
+      type: automated
+      evidence_required: "Anomaly detection rules and alert configuration"
+    references:
+      - "NIST SP 800-53 — SI-4 System Monitoring"
+      - "OWASP LLM Top 10 — LLM10 Unbounded Consumption"
+
+  - id: HE-023
+    category: observability
+    severity: high
+    title: "Dashboards display real-time agent safety and health metrics"
+    description: >
+      Operations teams must have real-time dashboards showing active sessions,
+      tool call rates, error rates, budget consumption, and safety flags.
+    validation:
+      type: manual_review
+      evidence_required: "Dashboard screenshots or configuration"
+    references:
+      - "NIST SP 800-53 — SI-4 System Monitoring"
+
+  - id: HE-024
+    category: observability
+    severity: medium
+    title: "Incident response playbook covers agent safety events"
+    description: >
+      A documented incident response playbook must exist specifically for
+      agent-related safety events, including prompt injection, data exfiltration,
+      and unauthorized tool use.
+    validation:
+      type: manual_review
+      evidence_required: "Incident response playbook document"
+    references:
+      - "NIST SP 800-61 — Incident Handling"
+      - "OWASP LLM Top 10"
+
+  - id: HE-025
+    category: observability
+    severity: medium
+    title: "Regular audit reviews of agent behavior logs"
+    description: >
+      Agent behavior logs must be reviewed on a defined schedule. Reviews must
+      look for policy violations, emerging threats, and opportunities to
+      tighten controls.
+    validation:
+      type: manual_review
+      evidence_required: "Audit schedule and most recent audit report"
+    references:
+      - "NIST SP 800-53 — AU-6 Audit Review and Analysis"
+      - "NIST SP 800-53 — CA-2 Security Assessments"
