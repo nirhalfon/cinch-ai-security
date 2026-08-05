@@ -25,7 +25,9 @@ from .loader import list_checklists, load_checklist
 
 SCHEMA = "cinch-assessment/1"
 STATUSES = ("pass", "fail", "na")
-_GRADE_ORDER = ["A", "B", "C", "D", "F"]
+# Ordering used only for capping: later entries are stronger caps. "I" sits last
+# because "not enough evidence to say" overrides any letter a partial score implies.
+_GRADE_ORDER = ["A", "B", "C", "D", "F", "I"]
 
 
 # ── rubric ──────────────────────────────────────────────────────────────────
@@ -72,21 +74,47 @@ def load_catalog() -> list[dict[str, Any]]:
 # ── scoring ─────────────────────────────────────────────────────────────────
 
 
-def _grade_for(score: int, critical_gaps: int, rubric: dict[str, Any]) -> dict[str, str]:
-    """Map a score to a letter grade, then apply the critical-gap caps."""
-    band = next(
-        (b for b in rubric["grades"] if score >= b["min"]),
-        rubric["grades"][-1],
-    )
-    grade, label, meaning, capped_by = band["grade"], band["label"], band["meaning"], ""
+def _band(grade: str, rubric: dict[str, Any]) -> dict[str, str]:
+    """Look up a grade's label and meaning, including the non-score 'I' grade."""
+    insufficient = rubric.get("insufficient_grade") or {}
+    if grade == insufficient.get("grade"):
+        return insufficient
+    return next(b for b in rubric["grades"] if b["grade"] == grade)
+
+
+def _grade_for(
+    score: int, critical_gaps: int, completeness: int, rubric: dict[str, Any]
+) -> dict[str, str]:
+    """Map a score to a letter grade, then apply the caps that can only lower it.
+
+    Two kinds of cap, both necessary. A critical gap caps the grade because one
+    unenforced critical control defeats a good average. Low completeness caps it
+    because a score computed over a handful of answered controls describes the
+    sample, not the deployment — without this, three passing controls out of 117
+    grade an unknown environment an A.
+    """
+    band = next((b for b in rubric["grades"] if score >= b["min"]), rubric["grades"][-1])
+    grade, capped_by = band["grade"], ""
+
+    def apply(max_grade: str, reason: str) -> None:
+        nonlocal grade, capped_by
+        if _GRADE_ORDER.index(max_grade) > _GRADE_ORDER.index(grade):
+            grade, capped_by = max_grade, reason
+
     for cap in rubric.get("grade_caps", []):
-        if critical_gaps >= cap["min_critical_gaps"] and _GRADE_ORDER.index(
-            cap["max_grade"]
-        ) > _GRADE_ORDER.index(grade):
-            grade, capped_by = cap["max_grade"], cap["reason"]
-            cband = next(b for b in rubric["grades"] if b["grade"] == grade)
-            label, meaning = cband["label"], cband["meaning"]
-    return {"grade": grade, "label": label, "meaning": meaning, "capped_by": capped_by}
+        if critical_gaps >= cap["min_critical_gaps"]:
+            apply(cap["max_grade"], cap["reason"])
+    for cap in rubric.get("completeness_caps", []):
+        if completeness < cap["below_completeness"]:
+            apply(cap["max_grade"], cap["reason"])
+
+    final = _band(grade, rubric)
+    return {
+        "grade": grade,
+        "label": final["label"],
+        "meaning": final["meaning"],
+        "capped_by": capped_by,
+    }
 
 
 def _summary(controls, status, rubric) -> dict[str, Any]:
@@ -117,7 +145,9 @@ def _summary(controls, status, rubric) -> dict[str, Any]:
         "critical_gaps": len(critical_gaps),
         "high_gaps": sum(1 for c in gaps if c["severity"] == "high"),
     }
-    summary.update(_grade_for(score, len(critical_gaps), rubric))
+    summary.update(
+        _grade_for(score, len(critical_gaps), summary["completeness"], rubric)
+    )
     return summary
 
 

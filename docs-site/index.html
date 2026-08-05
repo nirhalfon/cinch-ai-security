@@ -174,7 +174,7 @@
       Cinch
     </span>
     <a class="docs" href="https://github.com/nirhalfon/cinch-ai-security#readme" target="_blank" rel="noopener">Docs ↗</a>
-    <span class="ver">v1.1.0</span>
+    <span class="ver">v1.1.1</span>
   </div>
 
   <div class="hero wrap">
@@ -339,6 +339,11 @@ const RUBRIC_FALLBACK = {
   grade_caps:[
     {min_critical_gaps:1,max_grade:'D',reason:'an unenforced critical control caps the grade regardless of score'},
     {min_critical_gaps:3,max_grade:'F',reason:'three or more critical gaps means the containment story does not hold'}
+  ],
+  insufficient_grade:{grade:'I',label:'Insufficient evidence',meaning:'Too little of the catalog has been assessed to grade this deployment. The score describes the few controls that were answered, not the environment the agent runs in.'},
+  completeness_caps:[
+    {below_completeness:60,max_grade:'C',reason:'fewer than 60% of applicable controls were assessed, so a high score describes a sample rather than the deployment'},
+    {below_completeness:25,max_grade:'I',reason:'fewer than 25% of applicable controls were assessed — there is not enough evidence to put a letter on this deployment'}
   ],
   completeness_floor:0.6,
   phases:{
@@ -605,17 +610,29 @@ function compute(){
    sees here is what `cinch assess` writes into an assessment pack and what CI gates
    on. Scope is the whole catalog: everything the reviewer has actually answered
    counts toward the score, everything unanswered counts against completeness. */
-const GRADE_ORDER = ['A','B','C','D','F'];
-function gradeFor(score, criticalGaps){
+/* 'I' sits last: "not enough evidence to say" overrides any letter a partial score
+   implies. Mirrors _GRADE_ORDER in src/cinch/assess.py. */
+const GRADE_ORDER = ['A','B','C','D','F','I'];
+function gradeBand(grade){
+  const ins = RUBRIC.insufficient_grade;
+  if(ins && grade===ins.grade) return ins;
+  return RUBRIC.grades.find(b => b.grade===grade) || RUBRIC.grades[RUBRIC.grades.length-1];
+}
+function gradeFor(score, criticalGaps, completeness){
   const band = RUBRIC.grades.find(b => score >= b.min) || RUBRIC.grades[RUBRIC.grades.length-1];
-  let out = {grade:band.grade, label:band.label, meaning:band.meaning, capped_by:''};
+  let grade = band.grade, cappedBy = '';
+  const apply = (maxGrade, reason) => {
+    if(GRADE_ORDER.indexOf(maxGrade) > GRADE_ORDER.indexOf(grade)){ grade = maxGrade; cappedBy = reason; }
+  };
   (RUBRIC.grade_caps||[]).forEach(cap => {
-    if(criticalGaps >= cap.min_critical_gaps && GRADE_ORDER.indexOf(cap.max_grade) > GRADE_ORDER.indexOf(out.grade)){
-      const cb = RUBRIC.grades.find(b => b.grade===cap.max_grade);
-      out = {grade:cap.max_grade, label:cb.label, meaning:cb.meaning, capped_by:cap.reason};
-    }
+    if(criticalGaps >= cap.min_critical_gaps) apply(cap.max_grade, cap.reason);
   });
-  return out;
+  // Without this cap, three answered controls out of 117 grade an unknown deployment an A.
+  (RUBRIC.completeness_caps||[]).forEach(cap => {
+    if(completeness < cap.below_completeness) apply(cap.max_grade, cap.reason);
+  });
+  const final = gradeBand(grade);
+  return {grade:grade, label:final.label, meaning:final.meaning, capped_by:cappedBy};
 }
 function groupBy(controls, keyFn){
   const rows = {};
@@ -652,7 +669,7 @@ function analyze(){
     enforced: scoped.filter(c=>st[c.id]==='pass').length,
     gaps: gaps.length, critical_gaps: crit.length,
     high_gaps: gaps.filter(c=>c.sev==='high').length
-  }, gradeFor(score, crit.length));
+  }, gradeFor(score, crit.length, applicable ? Math.round(scoped.length/applicable*100) : 0));
 
   const coverage = {
     checklists: groupBy(all, c=>c.checklist),
@@ -983,7 +1000,7 @@ function insightStyle(sev){
   const c = {critical:['239,68,68','#ef4444'], high:['245,158,11','#f59e0b'], medium:['59,130,246','#60a5fa'], low:['100,116,139','#94a3b8'], ok:['34,197,94','#22c55e']}[sev] || ['100,116,139','#94a3b8'];
   return c;
 }
-function gradeColor(g){ return {A:'#22c55e',B:'#22c55e',C:'#f59e0b',D:'#f97316',F:'#ef4444'}[g] || '#94a3b8'; }
+function gradeColor(g){ return {A:'#22c55e',B:'#22c55e',C:'#f59e0b',D:'#f97316',F:'#ef4444',I:'#94a3b8'}[g] || '#94a3b8'; }
 
 /* Where the evidence came from. Packs from `cinch verify` carry the collector's
    identity, the probe targets, whether the bundle was signed, and whether the

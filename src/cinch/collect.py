@@ -50,8 +50,55 @@ def collector_identity(via_mcp: bool = False) -> dict[str, Any]:
         "hostname": socket.gethostname(),
         "platform": platform.platform(),
         "invoked_via_mcp": via_mcp,
+        "ancestor_pids": process_ancestors(),
         "tool": "cinch",
     }
+
+
+def process_ancestors(pid: int | None = None, limit: int = 40) -> list[int]:
+    """Return the PID chain from this process up to init, nearest ancestor first.
+
+    Used to catch the case that PID equality misses: an agent that *spawns* the
+    collector. The child has a different PID but the same UID and the same
+    authority, so its evidence is the agent's own account of itself.
+    """
+    pid = os.getpid() if pid is None else pid
+    chain: list[int] = []
+    seen = {pid}
+    current = pid
+    for _ in range(limit):
+        parent = _parent_pid(current)
+        if parent is None or parent in seen or parent <= 0:
+            break
+        chain.append(parent)
+        seen.add(parent)
+        current = parent
+    return chain
+
+
+def _parent_pid(pid: int) -> int | None:
+    """Read a process's PPID from /proc (Linux) or ps (portable fallback)."""
+    stat = Path("/proc") / str(pid) / "status"
+    try:
+        for line in stat.read_text().splitlines():
+            if line.startswith("PPid:"):
+                return int(line.split()[1])
+    except (OSError, ValueError, IndexError):
+        pass
+    if not shutil.which("ps"):
+        return None
+    try:
+        out = subprocess.run(  # nosec B603
+            ["ps", "-o", "ppid=", "-p", str(pid)],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    value = out.stdout.strip()
+    return int(value) if value.isdigit() else None
 
 
 def _self_attestation(collector: dict[str, Any], targets: list[dict[str, Any]]) -> dict[str, Any]:
@@ -62,12 +109,22 @@ def _self_attestation(collector: dict[str, Any], targets: list[dict[str, Any]]) 
             "collection was invoked through the MCP server, so the requester is an agent rather "
             "than an out-of-band operator"
         )
+    ancestors = collector.get("ancestor_pids") or []
     for t in targets:
-        if t.get("kind") == "host" and t.get("pid") == collector["pid"]:
+        if t.get("kind") != "host":
+            continue
+        if t.get("pid") == collector["pid"]:
             reasons.append(
                 "the inspected process is the collector's own process — it is describing itself"
             )
-        if t.get("kind") == "host" and t.get("resolved_by", "").startswith("collector process"):
+        elif t.get("pid") in ancestors:
+            # The case PID equality misses: the agent under audit started the collector.
+            reasons.append(
+                f"the collector was spawned by the audited process (PID {t.get('pid')} is an "
+                "ancestor of this collector), so it runs with the agent's identity and authority "
+                "rather than independently of it"
+            )
+        if t.get("resolved_by", "").startswith("collector process"):
             reasons.append("no target PID was given, so the collector inspected itself")
     unique = list(dict.fromkeys(reasons))
     return {

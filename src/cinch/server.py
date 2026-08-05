@@ -33,7 +33,7 @@ from .verify import verify_bundle, verify_file
 
 APP = MCPServer(
     name="cinch",
-    version="1.1.0",
+    version="1.1.1",
     description=(
         "MCP server + cross-harness skills for building and operating AI agents "
         "safely. Provides security checklists, protocols, and framework mappings "

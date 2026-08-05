@@ -75,13 +75,42 @@ def test_na_controls_leave_the_applicable_denominator():
     assert a["summary"]["score"] == 0
 
 
+def test_low_completeness_caps_the_grade_out_of_letters():
+    """Three answered controls must not grade an unknown deployment an A.
+
+    Found by running the probes against a live Claude Code harness: 3 of 117 controls
+    resolved, all passing, and the pack came back "A (Contained)".
+    """
+    crit = BY_SEV["critical"][0]
+    s = build({crit: "pass"})["summary"]
+    assert s["score"] == 100
+    assert s["grade"] == "I"
+    assert s["label"] == "Insufficient evidence"
+    assert "not enough evidence" in s["capped_by"]
+
+
+def test_partial_completeness_caps_the_grade_at_c():
+    status = {c["id"]: "pass" for c in CATALOG[:60]}  # ~52% of the catalog
+    s = build(status)["summary"]
+    assert 25 <= s["completeness"] < 60
+    assert s["grade"] == "C"
+    assert "describes a sample" in s["capped_by"]
+
+
+def test_full_completeness_earns_the_score_it_scored():
+    s = build({c["id"]: "pass" for c in CATALOG})["summary"]
+    assert s["completeness"] == 100
+    assert s["grade"] == "A"
+    assert s["capped_by"] == ""
+
+
 def test_one_critical_gap_caps_the_grade_at_d():
     """A high score cannot outvote an unenforced critical control."""
     status = {c["id"]: "pass" for c in CATALOG}
     status[BY_SEV["critical"][0]] = "fail"
     s = build(status)["summary"]
     assert s["score"] >= 90
-    assert s["grade"] == "D"
+    assert s["grade"] == "D"  # complete assessment, so the critical-gap cap is what binds
     assert "caps the grade" in s["capped_by"]
 
 
@@ -256,7 +285,7 @@ def test_cli_assess_writes_a_pack_and_can_fail_the_build(tmp_path, capsys):
     )
     assert code == 2  # the example deployment has open critical gaps
     pack = json.loads(out.read_text())
-    assert pack["summary"]["grade"] == "D"
+    assert pack["summary"]["grade"] == "D"  # 82% complete, capped by one critical gap
     assert pack["recommendations"][0]["phase"] == "now"
     assert "grade D" in capsys.readouterr().err
 

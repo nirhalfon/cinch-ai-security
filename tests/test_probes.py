@@ -11,6 +11,7 @@ Two invariants matter most and are pinned repeatedly:
 from __future__ import annotations
 
 import json
+import os
 import platform
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -173,6 +174,25 @@ def test_unpinned_requirements_fail_supply_chain_pinning(tmp_path):
     assert "unpinned" in json.dumps(obs["SC-003"].raw)
 
 
+def test_supply_chain_probes_abstain_outside_a_build_tree(tmp_path):
+    """A config directory has no build to assess — claiming "no SBOM" there is wrong.
+
+    Found by running the probes against a live Claude Code harness config directory:
+    SC-001/002/006 came back as failures for a tree that is not built at all.
+    """
+    (tmp_path / "settings.json").write_text("{}")
+    obs = by_control(project_probes.collect(tmp_path)[0])
+    for cid in ("SC-001", "SC-002", "SC-003", "SC-006", "SC-008", "HE-002", "HE-024"):
+        assert obs[cid].status == UNKNOWN, (cid, obs[cid].detail)
+        assert "not a build tree" in obs[cid].detail
+
+
+def test_build_tree_detection(tmp_path):
+    assert project_probes.is_build_tree(tmp_path) is False
+    (tmp_path / "pyproject.toml").write_text("[project]\n")
+    assert project_probes.is_build_tree(tmp_path) is True
+
+
 def test_missing_config_is_unknown_not_fail(tmp_path):
     """An empty deployment proves nothing — it must not be graded as failing."""
     obs = by_control(project_probes.collect(tmp_path)[0])
@@ -188,6 +208,7 @@ def test_keyword_leads_stay_unknown(hardened_project):
 
 
 def test_vendored_trees_are_never_walked(tmp_path):
+    (tmp_path / "pyproject.toml").write_text("[project]\nname = 'x'\n")  # a real build tree
     junk = tmp_path / ".venv" / "lib"
     junk.mkdir(parents=True)
     junk.joinpath("threat-model.md").write_text("# not ours\n")
@@ -322,6 +343,33 @@ def test_self_attestation_is_detected_when_the_collector_inspects_itself():
     assert bundle["provenance"]["self_attested"] is True
     assert bundle["provenance"]["independent"] is False
     assert any("its own process" in r or "inspected itself" in r for r in bundle["provenance"]["reasons"])
+
+
+def test_collector_spawned_by_the_audited_agent_is_self_attested(monkeypatch):
+    """PID equality is not enough: an agent that *spawns* the collector is auditing itself.
+
+    Found by pointing cinch at the Claude Code process that had spawned it — same UID,
+    same authority, different PID, and the bundle claimed to be independent evidence.
+    """
+    parent = collect_mod.process_ancestors()[0]
+    bundle = collect(kinds=("host",), pid=parent)
+    assert bundle["provenance"]["self_attested"] is True
+    assert any("spawned by the audited process" in r for r in bundle["provenance"]["reasons"])
+
+
+def test_process_ancestors_walks_up_to_a_real_parent():
+    chain = collect_mod.process_ancestors()
+    assert chain, "expected at least one ancestor PID"
+    assert all(isinstance(p, int) and p > 0 for p in chain)
+    assert os.getpid() not in chain
+
+
+def test_unrelated_target_process_stays_independent():
+    """PID 1 did not spawn the test runner, so evidence about it is independent."""
+    bundle = collect(kinds=("host",), pid=1)
+    if 1 in collect_mod.process_ancestors():  # containers where init is our ancestor
+        pytest.skip("init is an ancestor of the test runner in this environment")
+    assert bundle["provenance"]["independent"] is True
 
 
 def test_mcp_invocation_is_never_treated_as_independent(tmp_path):

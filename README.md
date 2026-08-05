@@ -75,7 +75,7 @@ Two ways to produce them, one engine grading both:
 1. **Probe a running agent** — `cinch collect` observes the real deployment and emits an evidence bundle; `cinch verify` grades it. This is the primary path.
 2. **Review by hand** — `cinch assess` grades a state file a reviewer filled in (or the console session they clicked through).
 
-The grade itself is computed once and shown everywhere: `src/cinch/assess.py` for the CLI and CI, the dashboard for the browser, both reading their rules — severity weights, grade bands, critical-gap caps, remediation phases — from **`docs-site/data/rubric.json`**. Change a rule there and both follow.
+The grade itself is computed once and shown everywhere: `src/cinch/assess.py` for the CLI and CI, the dashboard for the browser, both reading their rules — severity weights, grade bands, critical-gap and completeness caps, remediation phases — from **`docs-site/data/rubric.json`**. Change a rule there and both follow.
 
 ```bash
 # review by hand
@@ -126,17 +126,19 @@ cinch console --assessment pack.json
 
 Host findings are also mapped onto the containment controls that assert the same thing (`AE-005` egress → `AC-019` exfiltration), labelled `derived:` so the chain stays visible.
 
+Probes also abstain when the target is the wrong *kind* of thing: supply-chain and documentation controls (SBOM, dependency scanning, provenance, threat model) report `unknown` unless the directory is actually a build tree — a build manifest, a CI workflow, or a repository. Reporting "no SBOM" about a config directory would be confidently wrong.
+
 ### Three statuses, and why `unknown` matters
 
 `pass` demonstrably enforced · `fail` demonstrably not · `unknown` the probe could not tell.
 
-**`unknown` is never a pass.** A probe on macOS with no `/proc`, without `CAP_NET_ADMIN`, or with no manifest to read says so and leaves the control *unreviewed* — it costs completeness instead of quietly earning credit. Keyword hits in config are reported as leads to confirm, not as proof a limit is enforced at runtime. Every observation keeps the raw evidence it was derived from, so you can check the probe's reasoning instead of trusting it. Secret **names** are recorded; secret **values** never are.
+**`unknown` is never a pass — and never a fail either.** A probe on macOS with no `/proc`, without `CAP_NET_ADMIN`, or with no manifest to read says so and leaves the control *unreviewed* — it costs completeness instead of quietly earning credit. Keyword hits in config are reported as leads to confirm, not as proof a limit is enforced at runtime. Every observation keeps the raw evidence it was derived from, so you can check the probe's reasoning instead of trusting it. Secret **names** are recorded; secret **values** never are.
 
 ### Self-audit is detected, not assumed away
 
 [`protocols/evidence-collect.md`](protocols/evidence-collect.md) is blunt about this: an agent auditing its own host is both auditor and audited, and a compromised or simply mistaken agent can report every control as enforced.
 
-So collection records who collected what, where and when — and when the collector *is* the audited party (same process, or the request came in over MCP from an agent), the bundle is stamped `provenance.self_attested: true`. That becomes a **critical** finding in the assessment, is shown as a red `self-attested` banner in the console, and is never counted as assurance. Independent evidence means `cinch collect` run out of band under its own identity, signed with `--sign-cmd` using a key the agent cannot reach.
+So collection records who collected what, where and when — and when the collector *is* the audited party, the bundle is stamped `provenance.self_attested: true`. Three ways that is detected: the inspected PID is the collector's own; the inspected PID is an **ancestor** of the collector (the agent spawned it, so it inherits the agent's identity and authority); or the request arrived over MCP, where the requester is an agent by definition. That becomes a **critical** finding in the assessment, is shown as a red `self-attested` banner in the console, and is never counted as assurance. Independent evidence means `cinch collect` run out of band under its own identity, signed with `--sign-cmd` using a key the agent cannot reach.
 
 Behavioural probing sends adversarial input to a live system, so it refuses to run without `--authorized` naming the target.
 
@@ -161,7 +163,16 @@ Three ways to get results into the dashboard:
 
 Exports round-trip: an exported pack feeds straight back into `cinch assess --state` or the **Load assessment** button, so re-assessments diff cleanly.
 
-**How the grade works.** The score is severity-weighted (critical ×3, high ×2, medium/low ×1) over the controls you actually answered; unanswered controls hit *completeness*, not the score. Grade bands run A–F, but **an unenforced critical control caps the grade at D, and three or more cap it at F** — the pack says which cap fired and why.
+**How the grade works.** The score is severity-weighted (critical ×3, high ×2, medium/low ×1) over the controls you actually answered. Grade bands run A–F, and two kinds of cap can only ever lower the result — the pack always says which cap fired and why:
+
+| Cap | Effect |
+|---|---|
+| 1 unenforced **critical** control | grade capped at **D** |
+| 3 or more critical controls | grade capped at **F** |
+| under **60%** completeness | grade capped at **C** — a high score describes a sample, not the deployment |
+| under **25%** completeness | grade **I · Insufficient evidence** — no letter is claimed at all |
+
+That last one exists because of a real failure: probing a live Claude Code harness resolved 3 of 117 controls, all passing, and the first version graded it **A (Contained)**. A score computed over three controls says nothing about the other 114. Coverage is part of the verdict, not a footnote.
 
 ### Serve it yourself
 

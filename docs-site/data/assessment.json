@@ -3,17 +3,17 @@
   "generated": "example-assessment",
   "deployment": "checkout-agent-prod",
   "summary": {
-    "score": 81,
-    "reviewed": 24,
+    "score": 91,
+    "reviewed": 94,
     "total": 117,
-    "applicable": 116,
-    "not_applicable": 1,
-    "unreviewed": 92,
-    "completeness": 21,
-    "enforced": 19,
-    "gaps": 5,
+    "applicable": 114,
+    "not_applicable": 3,
+    "unreviewed": 20,
+    "completeness": 82,
+    "enforced": 85,
+    "gaps": 9,
     "critical_gaps": 2,
-    "high_gaps": 3,
+    "high_gaps": 6,
     "grade": "D",
     "label": "At risk",
     "meaning": "A single bad model decision can plausibly reach production systems.",
@@ -24,26 +24,26 @@
       {
         "name": "agent-containment",
         "total": 25,
-        "enforced": 19,
-        "gaps": 5,
+        "enforced": 20,
+        "gaps": 4,
         "reviewed": 24,
-        "ratio": 76
+        "ratio": 80
       },
       {
         "name": "agent-environment",
         "total": 11,
-        "enforced": 0,
+        "enforced": 10,
         "gaps": 0,
-        "reviewed": 0,
-        "ratio": 0
+        "reviewed": 10,
+        "ratio": 91
       },
       {
         "name": "harness-engineering",
         "total": 25,
-        "enforced": 0,
-        "gaps": 0,
-        "reviewed": 0,
-        "ratio": 0
+        "enforced": 23,
+        "gaps": 2,
+        "reviewed": 25,
+        "ratio": 92
       },
       {
         "name": "red-team",
@@ -56,18 +56,18 @@
       {
         "name": "supply-chain",
         "total": 15,
-        "enforced": 0,
-        "gaps": 0,
-        "reviewed": 0,
-        "ratio": 0
+        "enforced": 12,
+        "gaps": 2,
+        "reviewed": 14,
+        "ratio": 80
       },
       {
         "name": "system-hardening",
         "total": 21,
-        "enforced": 0,
-        "gaps": 0,
-        "reviewed": 0,
-        "ratio": 0
+        "enforced": 20,
+        "gaps": 1,
+        "reviewed": 21,
+        "ratio": 95
       }
     ],
     "custody": [
@@ -82,18 +82,18 @@
       {
         "name": "Dependency",
         "total": 3,
-        "enforced": 1,
+        "enforced": 2,
         "gaps": 1,
-        "reviewed": 2,
-        "ratio": 33
+        "reviewed": 3,
+        "ratio": 67
       },
       {
         "name": "Operational Controls",
         "total": 13,
-        "enforced": 4,
-        "gaps": 1,
-        "reviewed": 5,
-        "ratio": 31
+        "enforced": 12,
+        "gaps": 0,
+        "reviewed": 12,
+        "ratio": 92
       },
       {
         "name": "Supervision",
@@ -106,10 +106,10 @@
       {
         "name": "Traceability",
         "total": 4,
-        "enforced": 2,
+        "enforced": 3,
         "gaps": 0,
-        "reviewed": 2,
-        "ratio": 50
+        "reviewed": 3,
+        "ratio": 75
       },
       {
         "name": "Untrusted Input",
@@ -122,28 +122,28 @@
       {
         "name": "Yield",
         "total": 4,
-        "enforced": 2,
+        "enforced": 3,
         "gaps": 1,
-        "reviewed": 3,
-        "ratio": 50
+        "reviewed": 4,
+        "ratio": 75
       },
       {
         "name": "unmapped",
         "total": 81,
-        "enforced": 0,
-        "gaps": 0,
-        "reviewed": 0,
-        "ratio": 0
+        "enforced": 55,
+        "gaps": 5,
+        "reviewed": 60,
+        "ratio": 68
       }
     ],
     "lasm": [
       {
         "name": "L1",
         "total": 2,
-        "enforced": 1,
+        "enforced": 2,
         "gaps": 0,
-        "reviewed": 1,
-        "ratio": 50
+        "reviewed": 2,
+        "ratio": 100
       },
       {
         "name": "L2",
@@ -180,10 +180,10 @@
       {
         "name": "L6",
         "total": 17,
-        "enforced": 5,
-        "gaps": 2,
-        "reviewed": 7,
-        "ratio": 29
+        "enforced": 15,
+        "gaps": 1,
+        "reviewed": 16,
+        "ratio": 88
       },
       {
         "name": "L7",
@@ -196,10 +196,10 @@
       {
         "name": "unmapped",
         "total": 81,
-        "enforced": 0,
-        "gaps": 0,
-        "reviewed": 0,
-        "ratio": 0
+        "enforced": 55,
+        "gaps": 5,
+        "reviewed": 60,
+        "ratio": 68
       }
     ]
   },
@@ -207,27 +207,17 @@
     {
       "severity": "critical",
       "title": "2 critical containment controls unenforced",
-      "detail": "Until these are closed, a single manipulated or mistaken model decision can reach production systems: AC-006, AC-019."
+      "detail": "Until these are closed, a single manipulated or mistaken model decision can reach production systems: AC-006, SC-001."
     },
     {
       "severity": "high",
-      "title": "Assessment is 21% complete",
-      "detail": "The 81% score only covers 24 of 116 applicable controls. Unreviewed controls are unknown risk, not accepted risk."
-    },
-    {
-      "severity": "high",
-      "title": "Weakest CUSTODY pillar: Operational Controls (4/13 enforced)",
-      "detail": "1 gap sits in this pillar. Capability accretion is pillar-shaped: an agent that is contained everywhere else still inherits authority through the weak one."
+      "title": "Weakest CUSTODY pillar: Untrusted Input (2/4 enforced)",
+      "detail": "2 gaps concentrate in this pillar. Capability accretion is pillar-shaped: an agent that is contained everywhere else still inherits authority through the weak one."
     },
     {
       "severity": "medium",
-      "title": "Gaps cluster at LASM layer L6 (2 open)",
-      "detail": "A control at another layer will not detect an attack at this one. Clustered gaps mean this layer currently has no depth."
-    },
-    {
-      "severity": "medium",
-      "title": "5 checklists not started",
-      "detail": "No control reviewed in: agent-environment, harness-engineering, red-team, supply-chain, system-hardening. The score says nothing about these areas."
+      "title": "1 checklist not started",
+      "detail": "No control reviewed in: red-team. The score says nothing about these areas."
     }
   ],
   "recommendations": [
@@ -250,21 +240,20 @@
     },
     {
       "rank": 2,
-      "id": "AC-019",
-      "checklist": "agent-containment",
+      "id": "SC-001",
+      "checklist": "supply-chain",
       "severity": "critical",
       "phase": "now",
-      "threat": "Data exfiltration: agent transmits sensitive data to external destinations",
-      "action": "Default-deny egress, allowlisted gateway, DLP, request-size limits",
-      "verification": "No direct internet access. All outbound traffic routes through allowlisted proxy/gateway. DLP rules inspect outbound content.",
-      "pillar": "Operational Controls",
-      "layer": "L6 Environment",
+      "threat": "Complete Software Bill of Materials (SBOM) maintained",
+      "action": "A complete SBOM must be generated and maintained for all harness components, including transitive dependencies. SBOM must be in a machine-readable format (CycloneDX or SPDX).",
+      "verification": "automated \u2014 evidence required: SBOM file in CycloneDX or SPDX format and generation pipeline configuration",
+      "pillar": "",
+      "layer": "",
       "frameworks": [
-        "System-Hardening-Against-AI-Threats",
-        "CUSTODY Operational Controls",
-        "OWASP LLM02-Sensitive Info Disclosure"
+        "NIST SP 800-161r1 \u2014 Cybersecurity Supply Chain Risk Management",
+        "EO 14028 \u2014 Software Bill of Materials"
       ],
-      "evidence": "Egress is default-allow on the prod node pool; only DNS is filtered. Needs an allowlisted gateway before next release."
+      "evidence": "No SBOM is generated for the agent image; syft step drafted but not merged."
     },
     {
       "rank": 3,
@@ -318,6 +307,73 @@
         "CUSTODY Yield"
       ],
       "evidence": "No teardown drill has been run since the June rebuild \u2014 procedure exists but is unverified."
+    },
+    {
+      "rank": 6,
+      "id": "HE-005",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "phase": "next",
+      "threat": "Secrets management separates credentials from configuration",
+      "action": "API keys, tokens, and other secrets must not appear in configuration files, environment variables in plaintext, or source code. A secrets manager or vault must be used.",
+      "verification": "automated \u2014 evidence required: Secrets management configuration and scan results showing no hardcoded secrets",
+      "pillar": "",
+      "layer": "",
+      "frameworks": [
+        "OWASP Top 10 \u2014 A02 Cryptographic Failures",
+        "HashiCorp Vault documentation"
+      ],
+      "evidence": "Agent reads OPENAI_API_KEY straight from the pod env; broker migration is ticket PLT-812."
+    },
+    {
+      "rank": 7,
+      "id": "SC-003",
+      "checklist": "supply-chain",
+      "severity": "high",
+      "phase": "next",
+      "threat": "Dependency versions pinned with integrity hashes",
+      "action": "All dependency versions must be pinned to exact versions with integrity hashes (SHA-256). No floating version ranges in production lock files. Hash verification must be enforced at install time.",
+      "verification": "automated \u2014 evidence required: Lock file with integrity hashes and verification script output",
+      "pillar": "",
+      "layer": "",
+      "frameworks": [
+        "SLSA Framework \u2014 Build Level 2",
+        "NIST SP 800-161r1 \u2014 Supply Chain Risk Management"
+      ],
+      "evidence": "requirements.txt pins versions but carries no hashes, so a tampered wheel resolves silently."
+    },
+    {
+      "rank": 8,
+      "id": "SH-004",
+      "checklist": "system-hardening",
+      "severity": "high",
+      "phase": "next",
+      "threat": "Unnecessary services and daemons disabled",
+      "action": "Only services required for the harness must be enabled. SSH, cron, and other common services must be disabled or tightly restricted if not strictly needed.",
+      "verification": "automated \u2014 evidence required: Service audit results showing only required services active",
+      "pillar": "",
+      "layer": "",
+      "frameworks": [
+        "CIS Benchmark \u2014 Service Configuration",
+        "NIST SP 800-123 \u2014 Server Security"
+      ],
+      "evidence": "Host has no seccomp profile attached to the agent container."
+    },
+    {
+      "rank": 9,
+      "id": "HE-020",
+      "checklist": "harness-engineering",
+      "severity": "medium",
+      "phase": "later",
+      "threat": "Circuit breakers halt repeated failures across sessions",
+      "action": "The harness must implement circuit breakers that prevent new sessions when failure rates exceed defined thresholds, preventing cascading failures.",
+      "verification": "automated \u2014 evidence required: Circuit breaker configuration and failure-injection test results",
+      "pillar": "",
+      "layer": "",
+      "frameworks": [
+        "NIST SP 800-53 \u2014 SC-5 Denial of Service Protection"
+      ],
+      "evidence": "No circuit breaker across sessions \u2014 a failing tool is retried indefinitely by the orchestrator."
     }
   ],
   "action_plan": [
@@ -328,7 +384,7 @@
       "exit_criterion": "0 critical gaps; each closure has a verification note attached.",
       "control_ids": [
         "AC-006",
-        "AC-019"
+        "SC-001"
       ],
       "count": 2
     },
@@ -340,25 +396,30 @@
       "control_ids": [
         "AC-008",
         "AC-021",
-        "AC-023"
+        "AC-023",
+        "HE-005",
+        "SC-003",
+        "SH-004"
       ],
-      "count": 3
+      "count": 6
     },
     {
       "phase": "later",
       "window": "this quarter",
       "goal": "Finish the long tail and keep the assessment complete as the deployment changes.",
       "exit_criterion": "Every applicable control is reviewed and re-assessed on each material change.",
-      "control_ids": [],
-      "count": 0
+      "control_ids": [
+        "HE-020"
+      ],
+      "count": 1
     },
     {
       "phase": "complete-the-assessment",
       "window": "before sign-off",
-      "goal": "Review the remaining 92 applicable controls.",
+      "goal": "Review the remaining 20 applicable controls.",
       "exit_criterion": "Completeness at 100%; every control enforced, a gap, or explicitly not applicable.",
       "control_ids": [],
-      "count": 92
+      "count": 20
     }
   ],
   "unknown_control_ids": [],
@@ -493,8 +554,8 @@
       "id": "AC-019",
       "checklist": "agent-containment",
       "severity": "critical",
-      "status": "fail",
-      "evidence": "Egress is default-allow on the prod node pool; only DNS is filtered. Needs an allowlisted gateway before next release."
+      "status": "pass",
+      "evidence": "Egress now routes through the allowlisted gateway; verified with a denied direct-connect test on 2026-07-14."
     },
     {
       "id": "AC-020",
@@ -542,252 +603,252 @@
       "id": "AE-001",
       "checklist": "agent-environment",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "AE-002",
       "checklist": "agent-environment",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "AE-003",
       "checklist": "agent-environment",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "AE-004",
       "checklist": "agent-environment",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "AE-005",
       "checklist": "agent-environment",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "AE-006",
       "checklist": "agent-environment",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "na",
       "evidence": ""
     },
     {
       "id": "AE-007",
       "checklist": "agent-environment",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "AE-008",
       "checklist": "agent-environment",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "AE-009",
       "checklist": "agent-environment",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "AE-010",
       "checklist": "agent-environment",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "AE-011",
       "checklist": "agent-environment",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-001",
       "checklist": "harness-engineering",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-002",
       "checklist": "harness-engineering",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-003",
       "checklist": "harness-engineering",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-004",
       "checklist": "harness-engineering",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-005",
       "checklist": "harness-engineering",
       "severity": "high",
-      "status": "unreviewed",
-      "evidence": ""
+      "status": "fail",
+      "evidence": "Agent reads OPENAI_API_KEY straight from the pod env; broker migration is ticket PLT-812."
     },
     {
       "id": "HE-006",
       "checklist": "harness-engineering",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-007",
       "checklist": "harness-engineering",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-008",
       "checklist": "harness-engineering",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-009",
       "checklist": "harness-engineering",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-010",
       "checklist": "harness-engineering",
       "severity": "medium",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-011",
       "checklist": "harness-engineering",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-012",
       "checklist": "harness-engineering",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-013",
       "checklist": "harness-engineering",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-014",
       "checklist": "harness-engineering",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-015",
       "checklist": "harness-engineering",
       "severity": "medium",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-016",
       "checklist": "harness-engineering",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-017",
       "checklist": "harness-engineering",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-018",
       "checklist": "harness-engineering",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-019",
       "checklist": "harness-engineering",
       "severity": "medium",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-020",
       "checklist": "harness-engineering",
       "severity": "medium",
-      "status": "unreviewed",
-      "evidence": ""
+      "status": "fail",
+      "evidence": "No circuit breaker across sessions \u2014 a failing tool is retried indefinitely by the orchestrator."
     },
     {
       "id": "HE-021",
       "checklist": "harness-engineering",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-022",
       "checklist": "harness-engineering",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-023",
       "checklist": "harness-engineering",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-024",
       "checklist": "harness-engineering",
       "severity": "medium",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "HE-025",
       "checklist": "harness-engineering",
       "severity": "medium",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
@@ -934,252 +995,252 @@
       "id": "SC-001",
       "checklist": "supply-chain",
       "severity": "critical",
-      "status": "unreviewed",
-      "evidence": ""
+      "status": "fail",
+      "evidence": "No SBOM is generated for the agent image; syft step drafted but not merged."
     },
     {
       "id": "SC-002",
       "checklist": "supply-chain",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SC-003",
       "checklist": "supply-chain",
       "severity": "high",
-      "status": "unreviewed",
-      "evidence": ""
+      "status": "fail",
+      "evidence": "requirements.txt pins versions but carries no hashes, so a tampered wheel resolves silently."
     },
     {
       "id": "SC-004",
       "checklist": "supply-chain",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "na",
       "evidence": ""
     },
     {
       "id": "SC-005",
       "checklist": "supply-chain",
       "severity": "medium",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SC-006",
       "checklist": "supply-chain",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SC-007",
       "checklist": "supply-chain",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SC-008",
       "checklist": "supply-chain",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SC-009",
       "checklist": "supply-chain",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SC-010",
       "checklist": "supply-chain",
       "severity": "medium",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SC-011",
       "checklist": "supply-chain",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SC-012",
       "checklist": "supply-chain",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SC-013",
       "checklist": "supply-chain",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SC-014",
       "checklist": "supply-chain",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SC-015",
       "checklist": "supply-chain",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-001",
       "checklist": "system-hardening",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-002",
       "checklist": "system-hardening",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-003",
       "checklist": "system-hardening",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-004",
       "checklist": "system-hardening",
       "severity": "high",
-      "status": "unreviewed",
-      "evidence": ""
+      "status": "fail",
+      "evidence": "Host has no seccomp profile attached to the agent container."
     },
     {
       "id": "SH-005",
       "checklist": "system-hardening",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-006",
       "checklist": "system-hardening",
       "severity": "medium",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-007",
       "checklist": "system-hardening",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-008",
       "checklist": "system-hardening",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-009",
       "checklist": "system-hardening",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-010",
       "checklist": "system-hardening",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-011",
       "checklist": "system-hardening",
       "severity": "medium",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-012",
       "checklist": "system-hardening",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-013",
       "checklist": "system-hardening",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-014",
       "checklist": "system-hardening",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-015",
       "checklist": "system-hardening",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-016",
       "checklist": "system-hardening",
       "severity": "medium",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-017",
       "checklist": "system-hardening",
       "severity": "critical",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-018",
       "checklist": "system-hardening",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-019",
       "checklist": "system-hardening",
       "severity": "high",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-020",
       "checklist": "system-hardening",
       "severity": "medium",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     },
     {
       "id": "SH-021",
       "checklist": "system-hardening",
       "severity": "medium",
-      "status": "unreviewed",
+      "status": "pass",
       "evidence": ""
     }
   ]

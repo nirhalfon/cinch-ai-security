@@ -13,6 +13,15 @@
     { "min_critical_gaps": 1, "max_grade": "D", "reason": "an unenforced critical control caps the grade regardless of score" },
     { "min_critical_gaps": 3, "max_grade": "F", "reason": "three or more critical gaps means the containment story does not hold" }
   ],
+  "insufficient_grade": {
+    "grade": "I",
+    "label": "Insufficient evidence",
+    "meaning": "Too little of the catalog has been assessed to grade this deployment. The score describes the few controls that were answered, not the environment the agent runs in."
+  },
+  "completeness_caps": [
+    { "below_completeness": 60, "max_grade": "C", "reason": "fewer than 60% of applicable controls were assessed, so a high score describes a sample rather than the deployment" },
+    { "below_completeness": 25, "max_grade": "I", "reason": "fewer than 25% of applicable controls were assessed — there is not enough evidence to put a letter on this deployment" }
+  ],
   "completeness_floor": 0.6,
   "phases": {
     "now": {
