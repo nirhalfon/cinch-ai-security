@@ -4,10 +4,20 @@ name: Publish to PyPI
 # One-time setup: on https://pypi.org/manage/project/cinch-ai-security/settings/publishing/
 # add this GitHub workflow as a trusted publisher (owner: nirhalfon, repo: cinch-ai-security,
 # workflow: release.yml, environment: pypi). No API tokens required.
+#
+# Release flow: bump `version` in pyproject.toml, commit, then push a matching tag:
+#   git tag v1.1.0 && git push origin v1.1.0
+# The build job refuses to continue if the tag and the packaged version disagree, or if
+# that version is already on PyPI — uploads are immutable, so a re-push always fails.
 on:
   push:
     tags: ["v*.*.*"]
   workflow_dispatch:
+
+# Least privilege by default; the publish job escalates id-token:write only where
+# trusted publishing actually needs it. Actions are pinned by digest.
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -15,20 +25,69 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.13"
           cache: pip
+
+      - name: Version sanity — tag matches pyproject, and is not already on PyPI
+        run: |
+          set -euo pipefail
+          PKG_VERSION="$(python -c 'import pathlib,re; print(re.search(r"^version = \"([^\"]+)\"", pathlib.Path("pyproject.toml").read_text(), re.M).group(1))')"
+          echo "packaged version: $PKG_VERSION"
+          if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+            echo "tag version: $TAG_VERSION"
+            if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+              echo "::error::tag $GITHUB_REF_NAME does not match pyproject version $PKG_VERSION"
+              exit 1
+            fi
+          fi
+          if curl -fsSL "https://pypi.org/pypi/cinch-ai-security/$PKG_VERSION/json" -o /dev/null; then
+            echo "::error::version $PKG_VERSION is already on PyPI — uploads are immutable, bump the version"
+            exit 1
+          fi
+          echo "$PKG_VERSION is not published yet."
+
       - name: Build sdist + wheel
         run: |
           python -m pip install --upgrade pip build
           python -m build
+
       - name: Check metadata + README rendering
         run: |
           python -m pip install twine
-          twine check dist/*
-      - uses: actions/upload-artifact@v4
+          twine check --strict dist/*
+
+      # A package that cannot run is worse than a late release: install the built wheel
+      # into a clean venv and exercise it the way a user would.
+      - name: Smoke-test the built wheel
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install --quiet dist/*.whl
+          /tmp/smoke/bin/cinch --help > /dev/null
+          /tmp/smoke/bin/python - <<'PY'
+          from cinch.assess import load_catalog, load_rubric
+          from cinch.console import console_dir
+          catalog = load_catalog()
+          assert len(catalog) == 117, f"expected 117 controls in the wheel, got {len(catalog)}"
+          assert [b["grade"] for b in load_rubric()["grades"]] == ["A", "B", "C", "D", "F"]
+          root = console_dir()
+          for rel in ("index.html", "data/full.json", "data/rubric.json"):
+              assert (root / rel).is_file(), f"missing bundled console asset: {rel}"
+          print("bundled data OK:", len(catalog), "controls at", root)
+          PY
+          /tmp/smoke/bin/cinch collect --project . --deployment ci-smoke --out /tmp/ev.json
+          /tmp/smoke/bin/cinch verify --evidence /tmp/ev.json > /tmp/report.txt
+          grep -q "Grade" /tmp/report.txt
+          echo "wheel smoke test passed."
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dist
           path: dist/
@@ -40,11 +99,12 @@ jobs:
     permissions:
       id-token: write           # required for OIDC trusted publishing
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: dist
           path: dist/
-      - uses: pypa/gh-action-pypi-publish@release.v1
+
+      - uses: pypa/gh-action-pypi-publish@a892a5a61159132606e93a2fa6f4358831b04d26 # v1.14.2
         with:
           # Trusted publishing: no username/password token needed.
           print-hash: true
