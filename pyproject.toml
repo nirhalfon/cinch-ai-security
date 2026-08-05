@@ -44,7 +44,7 @@ cinch = "cinch.server:main"
 [project.optional-dependencies]
 # dev includes the security tooling (bandit, pip-audit) so CI installs one
 # pinned set via `pip install -e ".[dev]"` instead of ad-hoc unpinned installs.
-dev = ["pytest>=7.0,<9", "ruff>=0.1,<1", "bandit>=1.7,<2", "pip-audit>=2.7,<3"]
+dev = ["pytest>=8.0,<10", "ruff>=0.1,<1", "bandit>=1.7,<2", "pip-audit>=2.7,<3"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cinch"]
