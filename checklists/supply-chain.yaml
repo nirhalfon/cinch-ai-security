@@ -1,0 +1,259 @@
+# Supply Chain Checklist
+# Validates supply chain security for AI harness components and dependencies
+
+metadata:
+  id: supply-chain
+  name: "Supply Chain Checklist"
+  version: "1.0.0"
+  description: >
+    Validates supply chain security for AI harness components and dependencies.
+    Covers dependency management, provenance and integrity, build pipeline
+    security, model supply chain, and incident response.
+  categories:
+    - id: dependency-management
+      name: "Dependency Management"
+      weight: 30
+    - id: provenance-integrity
+      name: "Provenance & Integrity"
+      weight: 25
+    - id: build-pipeline
+      name: "Build Pipeline Security"
+      weight: 20
+    - id: model-supply-chain
+      name: "Model Supply Chain"
+      weight: 15
+    - id: incident-response
+      name: "Incident Response & Recovery"
+      weight: 10
+
+checklist:
+  # ── Dependency Management ──────────────────────────────────────────
+  - id: SC-001
+    category: dependency-management
+    severity: critical
+    title: "Complete Software Bill of Materials (SBOM) maintained"
+    description: >
+      A complete SBOM must be generated and maintained for all harness
+      components, including transitive dependencies. SBOM must be in a
+      machine-readable format (CycloneDX or SPDX).
+    validation:
+      type: automated
+      evidence_required: "SBOM file in CycloneDX or SPDX format and generation pipeline configuration"
+    references:
+      - "NIST SP 800-161r1 — Cybersecurity Supply Chain Risk Management"
+      - "EO 14028 — Software Bill of Materials"
+
+  - id: SC-002
+    category: dependency-management
+    severity: critical
+    title: "Automated vulnerability scanning of all dependencies"
+    description: >
+      All dependencies must be scanned for known vulnerabilities using
+      automated tools (e.g., OSV, Snyk, Trivy). Scans must run on every
+      build and nightly. Critical and high CVEs must be resolved or
+      formally accepted within SLA.
+    validation:
+      type: automated
+      evidence_required: "Vulnerability scan results and remediation tracking"
+    references:
+      - "NIST SP 800-53 — RA-5 Vulnerability Scanning"
+      - "NIST SP 800-53 — SI-2 Flaw Remediation"
+
+  - id: SC-003
+    category: dependency-management
+    severity: high
+    title: "Dependency versions pinned with integrity hashes"
+    description: >
+      All dependency versions must be pinned to exact versions with integrity
+      hashes (SHA-256). No floating version ranges in production lock files.
+      Hash verification must be enforced at install time.
+    validation:
+      type: automated
+      evidence_required: "Lock file with integrity hashes and verification script output"
+    references:
+      - "SLSA Framework — Build Level 2"
+      - "NIST SP 800-161r1 — Supply Chain Risk Management"
+
+  - id: SC-004
+    category: dependency-management
+    severity: high
+    title: "Private dependency registry or mirror used"
+    description: >
+      Production builds must pull dependencies from a private registry or
+      verified mirror, not directly from public registries. This prevents
+      dependency confusion and typosquatting attacks.
+    validation:
+      type: manual_review
+      evidence_required: "Private registry configuration and dependency resolution logs"
+    references:
+      - "OWASP Supply Chain — Dependency Confusion"
+      - "NIST SP 800-161r1 — Supply Chain Risk Management"
+
+  - id: SC-005
+    category: dependency-management
+    severity: medium
+    title: "Unused and unnecessary dependencies removed"
+    description: >
+      The dependency tree must be regularly audited to remove unused,
+      deprecated, or unmaintained packages. Every dependency must have a
+      clear justification for inclusion.
+    validation:
+      type: automated
+      evidence_required: "Dependency audit report and removal evidence"
+    references:
+      - "NIST SP 800-53 — CM-7 Least Functionality"
+      - "OWASP Supply Chain — Dependency Management"
+
+  # ── Provenance & Integrity ─────────────────────────────────────────
+  - id: SC-006
+    category: provenance-integrity
+    severity: critical
+    title: "Build provenance attestation for all release artifacts"
+    description: >
+      Every release artifact must have a signed provenance attestation
+      (SLSA provenance) that records how it was built, from what sources,
+      and by what builder. Attestations must be verifiable.
+    validation:
+      type: automated
+      evidence_required: "SLSA provenance attestations and verification script output"
+    references:
+      - "SLSA Framework — Build Level 3"
+      - "in-toto specification"
+
+  - id: SC-007
+    category: provenance-integrity
+    severity: critical
+    title: "Code signing enforced for all release artifacts"
+    description: >
+      All release artifacts — binaries, containers, and packages — must be
+      signed with a code-signing key managed in a hardware security module
+      (HSM) or equivalent. Signatures must be verified before deployment.
+    validation:
+      type: manual_review
+      evidence_required: "Code signing configuration and verification procedure"
+    references:
+      - "SLSA Framework — Build Level 3"
+      - "NIST SP 800-53 — SC-12 Cryptographic Key Management"
+
+  - id: SC-008
+    category: provenance-integrity
+    severity: high
+    title: "Container image signatures verified before deployment"
+    description: >
+      Container images must be signed during build and verified before
+      deployment. Unsigned or tampered images must be rejected by the
+      deployment pipeline and runtime.
+    validation:
+      type: automated
+      evidence_required: "Image signing configuration and admission controller policy"
+    references:
+      - "SLSA Framework — Build Level 3"
+      - "Sigstore Cosign documentation"
+
+  - id: SC-009
+    category: provenance-integrity
+    severity: high
+    title: "Git commit signing and branch protection enforced"
+    description: >
+      All commits to protected branches must be signed. Branch protection
+      must require signed commits, passing CI, and at least one reviewer.
+      No force pushes allowed.
+    validation:
+      type: automated
+      evidence_required: "Repository branch protection settings and commit signing configuration"
+    references:
+      - "SLSA Framework — Source Level 3"
+      - "NIST SP 800-53 — CM-5 Change Restrictions"
+
+  - id: SC-010
+    category: provenance-integrity
+    severity: medium
+    title: "Reproducible builds verified for critical components"
+    description: >
+      Critical components must build reproducibly — the same source must
+      produce bit-for-bit identical artifacts when built twice. Non-
+      reproducible builds must be investigated and documented.
+    validation:
+      type: manual_review
+      evidence_required: "Reproducibility verification results and any exception documentation"
+    references:
+      - "SLSA Framework — Build Level 3"
+      - "Reproducible Builds specification"
+
+  # ── Build Pipeline Security ────────────────────────────────────────
+  - id: SC-011
+    category: build-pipeline
+    severity: critical
+    title: "CI/CD pipeline runs in hardened ephemeral environments"
+    description: >
+      Build pipelines must run in ephemeral, hardened environments. No
+      persistent build agents. Build environments must be destroyed after
+      each build to prevent cache poisoning.
+    validation:
+      type: automated
+      evidence_required: "CI/CD configuration showing ephemeral runner setup"
+    references:
+      - "SLSA Framework — Build Level 2"
+      - "NIST SP 800-53 — CM-2 Baseline Configuration"
+
+  - id: SC-012
+    category: build-pipeline
+    severity: high
+    title: "Pipeline secrets injected, never embedded in configuration"
+    description: >
+      Build pipeline secrets (tokens, signing keys, deploy credentials) must
+      be injected from a secrets manager at runtime. Secrets must never appear
+      in pipeline configuration files, environment variables in logs, or
+      build artifacts.
+    validation:
+      type: automated
+      evidence_required: "Pipeline secret configuration and secret scan results"
+    references:
+      - "OWASP Top 10 — A02 Cryptographic Failures"
+      - "NIST SP 800-53 — SC-12 Cryptographic Key Management"
+
+  - id: SC-013
+    category: build-pipeline
+    severity: high
+    title: "Build pipeline changes require review and approval"
+    description: >
+      All changes to CI/CD pipeline configuration must go through code review
+      and approval. Pipeline-as-code files must be in protected branches with
+      required reviews.
+    validation:
+      type: manual_review
+      evidence_required: "Pipeline change approval workflow and recent approval records"
+    references:
+      - "NIST SP 800-53 — CM-3 Configuration Change Control"
+      - "SLSA Framework — Source Level 2"
+
+  # ── Model Supply Chain ──────────────────────────────────────────────
+  - id: SC-014
+    category: model-supply-chain
+    severity: critical
+    title: "Model weights verified against published checksums"
+    description: >
+      All model weights downloaded from external sources must be verified
+      against published SHA-256 checksums before use. Checksums must come
+      from the model publisher's official channel.
+    validation:
+      type: automated
+      evidence_required: "Checksum verification script and verification logs"
+    references:
+      - "NIST AI RMF — MAP 1.1"
+      - "SLSA Framework — Build Level 1"
+
+  - id: SC-015
+    category: model-supply-chain
+    severity: critical
+    title: "Model provenance and training data transparency documented"
+    description: >
+      For each model used, documentation must exist covering: model origin,
+      training data sources, known limitations, safety evaluations performed,
+      and any modifications made since original publication.
+    validation:
+      type: manual_review
+      evidence_required: "Model card documentation and provenance records"
+    references:
+      - "NIST AI RMF — MAP 1.1"
+      - "Model Cards for Model Reporting — Mitchell et al."

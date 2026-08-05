@@ -1,0 +1,119 @@
+# LASM Crosswalk
+# Maps LASM (Layered Attack Surface Model) layers and temporal classes
+# to Cinch checklist items.
+
+metadata:
+  name: LASM Crosswalk
+  version: "1.0.0"
+  description: >
+    Maps the Layered Attack Surface Model (LASM) seven architectural layers
+    and four temporal classes to Cinch checklist items. LASM
+    supports cross-layer defense in depth with controls matched to both the
+    affected component and the attack timescale.
+
+mappings:
+  - framework: LASM
+    control_id: L1
+    framework_control_name: "Foundation Layer — Model weights, training, fine-tuning"
+    checklist_ids:
+      - AC-007
+      - SC-001
+      - SC-002
+      - SC-003
+    description: "Model provenance, dataset integrity, SBOM/AIBOM, and fine-tuning security address foundation layer threats"
+
+  - framework: LASM
+    control_id: L2
+    framework_control_name: "Cognitive Layer — Planning, reasoning, goal formation"
+    checklist_ids:
+      - AC-012
+    description: "Explicit goals, stop conditions, and confidence thresholds address goal hijacking and objective drift"
+
+  - framework: LASM
+    control_id: L3
+    framework_control_name: "Memory Layer — Short-term, long-term, RAG, vector stores"
+    checklist_ids:
+      - AC-004
+      - AC-008
+    description: "Data inventory, memory validation, source labels, and retention limits address memory poisoning and retrieval corruption"
+
+  - framework: LASM
+    control_id: L4
+    framework_control_name: "Tool Execution Layer — APIs, plugins, browsers, code interpreters"
+    checklist_ids:
+      - AC-003
+      - AC-005
+      - AC-006
+      - AC-011
+      - AC-017
+    description: "Tool allowlists, instruction hierarchy, data separation, infrastructure-level approval, and rate limits address tool execution threats"
+
+  - framework: LASM
+    control_id: L5
+    framework_control_name: "Integration Layer — Agent-to-agent, orchestration, delegation"
+    checklist_ids:
+      - AC-014
+      - AC-021
+      - AC-022
+    description: "Delegation tracing, per-agent isolation, and tool isolation address cross-agent and trust chain threats"
+
+  - framework: LASM
+    control_id: L6
+    framework_control_name: "Environment Layer — OS, network, identity, filesystem"
+    checklist_ids:
+      - AC-016
+      - AC-018
+      - AC-019
+      - AC-020
+      - AC-023
+      - AC-024
+    description: "Secret broker, non-root execution, default-deny egress, micro-segmentation, immutable images, and ephemeral environments address environment layer threats"
+
+  - framework: LASM
+    control_id: L7
+    framework_control_name: "Governance Layer — Policy, compliance, oversight, audit"
+    checklist_ids:
+      - AC-001
+      - AC-002
+      - AC-009
+      - AC-010
+      - AC-013
+      - AC-015
+    description: "Authorization artifacts, scope boundaries, human oversight, immutable logging, and separation of duties address governance layer threats"
+
+  # ── Temporal Classes ────────────────────────────────────────────
+
+  - framework: LASM
+    control_id: T-Immediate
+    framework_control_name: "Immediate — Attacks that execute in a single interaction"
+    checklist_ids:
+      - AC-005
+      - AC-006
+      - AC-011
+    description: "Instruction hierarchy, data separation, and infrastructure enforcement address immediate attacks"
+
+  - framework: LASM
+    control_id: T-Session
+    framework_control_name: "Session — Attacks that unfold over a single session"
+    checklist_ids:
+      - AC-012
+      - AC-017
+    description: "Stop conditions and rate limits address session-scope attacks"
+
+  - framework: LASM
+    control_id: T-CrossSession
+    framework_control_name: "Cross-session — Attacks that persist across sessions"
+    checklist_ids:
+      - AC-008
+      - AC-023
+      - AC-024
+    description: "Memory validation, immutable images, and ephemeral environments address cross-session persistence"
+
+  - framework: LASM
+    control_id: T-Persistent
+    framework_control_name: "Persistent — Attacks that create permanent or long-lived compromise"
+    checklist_ids:
+      - AC-007
+      - AC-023
+      - AC-025
+    description: "Model provenance, immutable system paths, and credential revocation address persistent threats"

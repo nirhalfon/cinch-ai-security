@@ -1,0 +1,6 @@
+theme: jekyll-theme-cayman
+markdown: kramdown
+title: Cinch
+description: MCP server + cross-harness skills for building and operating AI agents safely. Grounded in NIST, CISA, OWASP, CUSTODY, and LASM.
+url: "https://nirhalfon.github.io"
+baseurl: "/cinch-ai-security"

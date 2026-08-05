@@ -1,0 +1,79 @@
+# CUSTODY Framework Crosswalk
+# Maps CUSTODY seven pillars to Cinch checklist items.
+
+metadata:
+  name: CUSTODY Framework Crosswalk
+  version: "1.0.0"
+  description: >
+    Maps the CUSTODY autonomous agent containment framework pillars to
+    Cinch checklist items. CUSTODY distinguishes between granted
+    authority and effective authority — the security objective is to prevent
+    the gap between them from expanding.
+
+mappings:
+  - framework: CUSTODY
+    control_id: CoR-01
+    framework_control_name: "Conditions of Release"
+    checklist_ids:
+      - AC-001
+      - AC-002
+      - AC-003
+      - AC-004
+    description: "Authorization artifacts, scope boundaries, tool allowlists, and data inventories define what an agent may access, change, invoke, or delegate"
+
+  - framework: CUSTODY
+    control_id: UI-01
+    framework_control_name: "Untrusted Input"
+    checklist_ids:
+      - AC-005
+      - AC-006
+      - AC-007
+      - AC-008
+    description: "Instruction hierarchy, data-instruction separation, model provenance, and memory validation protect against hostile content"
+
+  - framework: CUSTODY
+    control_id: Sup-01
+    framework_control_name: "Supervision"
+    checklist_ids:
+      - AC-009
+      - AC-010
+      - AC-011
+      - AC-012
+    description: "Human approval gates, Agent Rule of One, infrastructure-level enforcement, and stop conditions ensure human oversight"
+
+  - framework: CUSTODY
+    control_id: Trace-01
+    framework_control_name: "Traceability"
+    checklist_ids:
+      - AC-013
+      - AC-014
+      - AC-015
+    description: "Immutable logging, delegation tracing, and separation of duties enable accountability and forensic reconstruction"
+
+  - framework: CUSTODY
+    control_id: OC-01
+    framework_control_name: "Operational Controls"
+    checklist_ids:
+      - AC-016
+      - AC-017
+      - AC-018
+      - AC-019
+      - AC-020
+    description: "Secret broker, rate limits, non-root execution, default-deny egress, and micro-segmentation constrain operational authority"
+
+  - framework: CUSTODY
+    control_id: Dep-01
+    framework_control_name: "Dependency"
+    checklist_ids:
+      - AC-021
+      - AC-022
+    description: "Per-agent isolation and tool isolation prevent capability accretion through delegation and trust chains"
+
+  - framework: CUSTODY
+    control_id: Yield-01
+    framework_control_name: "Yield"
+    checklist_ids:
+      - AC-023
+      - AC-024
+      - AC-025
+    description: "Immutable images, ephemeral environments, and credential revocation enable secure teardown and recovery"

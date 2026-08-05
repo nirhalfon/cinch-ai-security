@@ -1,0 +1,177 @@
+# NIST AI RMF Crosswalk
+# Maps NIST AI RMF functions and subcategories to Cinch checklist items.
+
+metadata:
+  name: NIST AI RMF Crosswalk
+  version: "1.0.0"
+  description: >
+    Maps NIST AI Risk Management Framework (AI RMF 1.0) functions and subcategories
+    to Cinch checklist items. Also includes AI 600-1 GenAI Profile mappings.
+
+mappings:
+  # ── GOVERN ────────────────────────────────────────────────────
+
+  - framework: NIST AI RMF
+    control_id: GOVERN 1.1
+    framework_control_name: "AI policies and procedures are established"
+    checklist_ids:
+      - AC-001
+      - HE-021
+    description: "Organizational AI usage policies map to authorization artifacts and AI usage norms"
+
+  - framework: NIST AI RMF
+    control_id: GOVERN 1.3
+    framework_control_name: "Roles and responsibilities for AI risk are defined"
+    checklist_ids:
+      - AC-010
+      - AC-009
+    description: "Agent Rule of One and human-in-the-loop approval define responsibility"
+
+  - framework: NIST AI RMF
+    control_id: GOVERN 1.7
+    framework_control_name: "Accountability structures for AI risk are documented"
+    checklist_ids:
+      - AC-013
+      - AC-014
+      - AC-015
+    description: "Immutable logging, delegation tracing, and separation of duties enable accountability"
+
+  - framework: NIST AI RMF
+    control_id: GOVERN 2.1
+    framework_control_name: "Risk tolerance for AI is documented"
+    checklist_ids:
+      - AC-001
+      - AC-002
+    description: "Authorization artifacts document acceptable risk boundaries"
+
+  - framework: NIST AI RMF
+    control_id: GOVERN 3.1
+    framework_control_name: "AI risk management processes are monitored"
+    checklist_ids:
+      - AC-013
+      - HE-019
+    description: "Immutable logging and scheduled CI provide ongoing monitoring"
+
+  # ── MAP ────────────────────────────────────────────────────────
+
+  - framework: NIST AI RMF
+    control_id: MAP 1.1
+    framework_control_name: "Context and domain are understood"
+    checklist_ids:
+      - HE-001
+      - HE-002
+      - HE-003
+    description: "Architecture documentation, AGENTS.md, and ADRs establish context"
+
+  - framework: NIST AI RMF
+    control_id: MAP 1.5
+    framework_control_name: "Data and inputs are assessed"
+    checklist_ids:
+      - AC-004
+      - AC-006
+      - AC-008
+    description: "Data inventory, input separation, and memory validation address data risks"
+
+  - framework: NIST AI RMF
+    control_id: MAP 2.3
+    framework_control_name: "AI system components are understood"
+    checklist_ids:
+      - AC-007
+      - SC-001
+      - SC-002
+    description: "Model provenance and supply chain integrity ensure component trust"
+
+  - framework: NIST AI RMF
+    control_id: MAP 3.1
+    framework_control_name: "AI risks are identified"
+    checklist_ids:
+      - AC-005
+      - AC-012
+      - RT-001
+    description: "Prompt injection, goal hijacking, and threat modeling identify risks"
+
+  # ── MEASURE ────────────────────────────────────────────────────
+
+  - framework: NIST AI RMF
+    control_id: MEASURE 1.1
+    framework_control_name: "AI system performance is evaluated"
+    checklist_ids:
+      - HE-011
+      - HE-013
+      - HE-014
+    description: "Test suites, mutation testing, and property-based testing evaluate AI system reliability"
+
+  - framework: NIST AI RMF
+    control_id: MEASURE 2.1
+    framework_control_name: "AI risks are assessed"
+    checklist_ids:
+      - HE-008
+      - HE-025
+    description: "Unsafe code policies and security-critical path marking assess risk"
+
+  - framework: NIST AI RMF
+    control_id: MEASURE 3.1
+    framework_control_name: "AI risk tracking is established"
+    checklist_ids:
+      - AC-013
+      - HE-006
+    description: "Immutable logging and CI pipeline tracking establish risk monitoring"
+
+  # ── MANAGE ────────────────────────────────────────────────────
+
+  - framework: NIST AI RMF
+    control_id: MANAGE 1.1
+    framework_control_name: "AI risks are managed"
+    checklist_ids:
+      - AC-016
+      - AC-017
+      - AC-018
+      - AC-019
+      - AC-020
+    description: "Operational controls (secret broker, rate limits, non-root, egress, segmentation) manage risks"
+
+  - framework: NIST AI RMF
+    control_id: MANAGE 2.1
+    framework_control_name: "Harm from AI is mitigated"
+    checklist_ids:
+      - AC-009
+      - AC-011
+      - AC-024
+      - AC-025
+    description: "Approval gates, ephemeral environments, and credential revocation mitigate harm"
+
+  - framework: NIST AI RMF
+    control_id: MANAGE 2.3
+    framework_control_name: "AI system failures are managed"
+    checklist_ids:
+      - AC-023
+      - AC-024
+      - AC-025
+    description: "Immutable images, ephemeral environments, and credential revocation manage failures"
+
+  # ── AI 600-1 GenAI Profile ─────────────────────────────────────
+
+  - framework: NIST AI 600-1
+    control_id: GenAI-1.1
+    framework_control_name: "Prompt injection risks are managed"
+    checklist_ids:
+      - AC-005
+      - AC-006
+    description: "Instruction hierarchy and data-instruction separation address prompt injection"
+
+  - framework: NIST AI 600-1
+    control_id: GenAI-2.1
+    framework_control_name: "Data leakage risks are managed"
+    checklist_ids:
+      - AC-019
+      - AC-004
+    description: "Default-deny egress and data inventory address data leakage"
+
+  - framework: NIST AI 600-1
+    control_id: GenAI-3.1
+    framework_control_name: "Agency and autonomy risks are managed"
+    checklist_ids:
+      - AC-001
+      - AC-003
+      - AC-009
+    description: "Authorization artifacts, tool allowlists, and approval gates manage agency risks"

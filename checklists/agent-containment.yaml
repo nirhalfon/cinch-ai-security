@@ -1,0 +1,348 @@
+# AI Agent Containment Checklist
+# CUSTODY Framework + LASM + OWASP Agentic AI + NIST AI RMF
+
+metadata:
+  name: AI Agent Containment Checklist
+  version: "1.0.0"
+  description: >
+    Enforceable controls for containing autonomous AI agents. Every control maps
+    to a CUSTODY pillar and LASM layer. Core assumption: an AI agent can be
+    manipulated, compromised, or wrong. Its environment must prevent a bad
+    decision from becoming an unrestricted system action.
+  source_repos:
+    - https://github.com/malwarejake/CUSTODY-framework
+    - https://github.com/yuval14/Artificial-Intelligence-Cyber-Shield
+  frameworks:
+    - CUSTODY
+    - LASM
+    - OWASP Agentic AI
+    - NIST AI RMF
+    - Google SAIF
+
+checklist:
+
+  # ── Conditions of Release ──────────────────────────────────────
+
+  - id: AC-001
+    category: conditions_of_release
+    custody_pillar: Conditions of Release
+    lasm_layer: L7 Governance
+    threat: "Excessive agency: agent performs high-impact actions without restriction"
+    control: "Machine-readable authorization artifact defining permitted tools, data, actions, and scope"
+    severity: critical
+    verification: "Authorization artifact exists specifying permitted tools, data, and actions. Scope boundaries are explicit and enforced."
+    sources:
+      - CUSTODY Conditions of Release
+      - OWASP Agentic AI LLM06-Excessive Agency
+      - NIST AI RMF MANAGE 2.3
+
+  - id: AC-002
+    category: conditions_of_release
+    custody_pillar: Conditions of Release
+    lasm_layer: L7 Governance
+    threat: "Scope creep: agent task grows beyond original authorization"
+    control: "Explicit start and end conditions for each task with human re-authorization for scope changes"
+    severity: critical
+    verification: "Task scope definition exists. Agent cannot proceed beyond scope without re-authorization."
+    sources:
+      - CUSTODY Conditions of Release
+      - LASM L7 Governance
+
+  - id: AC-003
+    category: conditions_of_release
+    custody_pillar: Conditions of Release
+    lasm_layer: L4 Tool Execution
+    threat: "Unauthorized tool access: agent accesses tools not required for its task"
+    control: "Tool allowlist — agent may only invoke explicitly permitted tools and APIs"
+    severity: critical
+    verification: "Tool inventory enforced by policy engine or tool gateway. Agent cannot invoke tools outside the allowlist."
+    sources:
+      - CUSTODY Conditions of Release
+      - OWASP Agentic AI
+      - System-Hardening-Against-AI-Threats
+
+  - id: AC-004
+    category: conditions_of_release
+    custody_pillar: Conditions of Release
+    lasm_layer: L3 Memory
+    threat: "Data overcollection: agent accesses data beyond what its task requires"
+    control: "Data inventory enumerating minimum data required for the authorized task"
+    severity: high
+    verification: "Authorized data sources documented and enforced. Access to unauthorized sources blocked at infrastructure level."
+    sources:
+      - CUSTODY Conditions of Release
+      - NIST AI RMF MAP 1.5
+
+  # ── Untrusted Input ────────────────────────────────────────────
+
+  - id: AC-005
+    category: untrusted_input
+    custody_pillar: Untrusted Input
+    lasm_layer: L4 Tool Execution
+    threat: "Direct prompt injection: user input overrides developer instructions"
+    control: "Instruction hierarchy enforcement — system instructions take precedence over user input"
+    severity: critical
+    verification: "Agent runtime enforces instruction priority. System prompt cannot be overridden. Tested with known injection payloads."
+    sources:
+      - OWASP Top 10 LLM LLM01-Prompt Injection
+      - CUSTODY Untrusted Input
+      - NIST AI 600-1
+
+  - id: AC-006
+    category: untrusted_input
+    custody_pillar: Untrusted Input
+    lasm_layer: L4 Tool Execution
+    threat: "Indirect prompt injection: external data contains malicious instructions"
+    control: "Separate data from instructions in agent context; sandbox retrieval and parsing"
+    severity: critical
+    verification: "Agent architecture separates instruction channel from data channel. Retrieved content parsed in isolated context."
+    sources:
+      - OWASP Top 10 LLM LLM01
+      - CUSTODY Untrusted Input
+
+  - id: AC-007
+    category: untrusted_input
+    custody_pillar: Untrusted Input
+    lasm_layer: L1 Foundation
+    threat: "Model supply chain compromise: compromised model weights or checkpoints"
+    control: "Model provenance verification — verify integrity hashes, sign model artifacts"
+    severity: critical
+    verification: "Model hashes verified at load time. Artifacts signed and signatures checked. Supply chain SBOM/AIBOM available."
+    sources:
+      - LASM L1 Foundation
+      - NIST AI RMF MAP 2.3
+      - ETSI GR SAI 005
+
+  - id: AC-008
+    category: untrusted_input
+    custody_pillar: Untrusted Input
+    lasm_layer: L3 Memory
+    threat: "Memory poisoning: long-term or session memory manipulated by injected content"
+    control: "Memory validation, source labeling, retention limits, controlled write access"
+    severity: high
+    verification: "Agent memory store applies write controls. Entries carry source labels and timestamps. Retention policies enforced."
+    sources:
+      - LASM L3 Memory
+      - CUSTODY Untrusted Input
+      - OWASP Agentic AI
+
+  # ── Supervision ────────────────────────────────────────────────
+
+  - id: AC-009
+    category: supervision
+    custody_pillar: Supervision
+    lasm_layer: L7 Governance
+    threat: "Unsafe autonomy: agent continues execution despite uncertainty or elevated risk"
+    control: "Human-in-the-loop approval gates for high-impact actions"
+    severity: critical
+    verification: "High-impact actions require explicit human approval enforced by infrastructure, not agent policy."
+    sources:
+      - CUSTODY Supervision
+      - OWASP LLM06-Excessive Agency
+      - NIST AI RMF GOVERN 1.3
+
+  - id: AC-010
+    category: supervision
+    custody_pillar: Supervision
+    lasm_layer: L7 Governance
+    threat: "Loss of human oversight: agent operates without operator awareness"
+    control: "Agent Rule of One — single agent, single task, single operator, single scope"
+    severity: high
+    verification: "Each deployment has one responsible human operator. Operator receives real-time notifications for high-impact actions."
+    sources:
+      - OWASP Agentic AI
+      - CUSTODY Supervision
+
+  - id: AC-011
+    category: supervision
+    custody_pillar: Supervision
+    lasm_layer: L4 Tool Execution
+    threat: "Approval bypass: agent circumvents gates through delegation or tool chaining"
+    control: "Policy engine enforces approval at infrastructure level, not in agent logic"
+    severity: critical
+    verification: "Approval gates enforced by external policy engine. Agent cannot modify, bypass, or deactivate approval rules."
+    sources:
+      - CUSTODY Supervision
+      - System-Hardening-Against-AI-Threats
+
+  - id: AC-012
+    category: supervision
+    custody_pillar: Supervision
+    lasm_layer: L2 Cognitive
+    threat: "Goal hijacking: agent objective altered by adversarial input"
+    control: "Explicit goal specification with stop conditions and confidence thresholds"
+    severity: high
+    verification: "Goal definition includes explicit stop conditions. Agent halts and escalates when conditions are met."
+    sources:
+      - LASM L2 Cognitive
+      - CUSTODY Supervision
+
+  # ── Traceability ───────────────────────────────────────────────
+
+  - id: AC-013
+    category: traceability
+    custody_pillar: Traceability
+    lasm_layer: L7 Governance
+    threat: "Audit evasion: agent actions cannot be reconstructed after an incident"
+    control: "Immutable structured logging of all agent actions with trace IDs"
+    severity: critical
+    verification: "All actions logged to immutable append-only store. Each carries trace ID linking to session, task, and operator. Logs not modifiable by agent."
+    sources:
+      - CUSTODY Traceability
+      - NIST AI RMF GOVERN 1.7
+      - OWASP Agentic AI
+
+  - id: AC-014
+    category: traceability
+    custody_pillar: Traceability
+    lasm_layer: L5 Integration
+    threat: "Hidden delegation: agent delegates actions to other agents without visibility"
+    control: "Delegation logging, explicit authorization, chain-of-action tracing"
+    severity: high
+    verification: "All delegation events logged with delegator ID, delegate ID, action, authorization status, and result."
+    sources:
+      - CUSTODY Traceability
+      - LASM L5 Integration
+
+  - id: AC-015
+    category: traceability
+    custody_pillar: Traceability
+    lasm_layer: L7 Governance
+    threat: "Accountability gap: no way to determine who authorized what"
+    control: "Separation of duties — actions, approvals, and logging handled by independent systems"
+    severity: high
+    verification: "Agent runtime, approval engine, and log store are separate systems. Agent cannot write to its own approval system or modify audit trail."
+    sources:
+      - CUSTODY Traceability
+      - NIST AI RMF GOVERN 1.7
+
+  # ── Operational Controls ───────────────────────────────────────
+
+  - id: AC-016
+    category: operational_controls
+    custody_pillar: Operational Controls
+    lasm_layer: L6 Environment
+    threat: "Credential theft: agent reads and exfiltrates tokens, SSH keys, or cloud credentials"
+    control: "Secret broker with short-lived, scoped credentials; no direct secret access"
+    severity: critical
+    verification: "Agent obtains credentials through secret broker only. Credentials are scoped, time-limited, and auto-rotated. Agent cannot read other agents' credentials."
+    sources:
+      - CUSTODY Operational Controls
+      - System-Hardening-Against-AI-Threats
+      - LASM L6 Environment
+
+  - id: AC-017
+    category: operational_controls
+    custody_pillar: Operational Controls
+    lasm_layer: L4 Tool Execution
+    threat: "Tool-loop denial of service: agent repeatedly calls tools consuming resources"
+    control: "Rate limits, quotas, circuit breakers, timeout rules, and recursion limits"
+    severity: high
+    verification: "Agent runtime enforces: max tool calls per task, max execution time, max token budget, max recursion depth. Circuit breaker activates on repeated failures."
+    sources:
+      - CUSTODY Operational Controls
+      - OWASP Agentic AI
+
+  - id: AC-018
+    category: operational_controls
+    custody_pillar: Operational Controls
+    lasm_layer: L6 Environment
+    threat: "Privilege escalation: agent or generated code gains root or admin privileges"
+    control: "Non-root execution, no-new-privileges, capability removal, SELinux/AppArmor enforcement"
+    severity: critical
+    verification: "Agent runs as dedicated non-root account. no-new-privileges set. Capabilities dropped. SELinux/AppArmor policy confines agent."
+    sources:
+      - System-Hardening-Against-AI-Threats
+      - CUSTODY Operational Controls
+      - LASM L6 Environment
+
+  - id: AC-019
+    category: operational_controls
+    custody_pillar: Operational Controls
+    lasm_layer: L6 Environment
+    threat: "Data exfiltration: agent transmits sensitive data to external destinations"
+    control: "Default-deny egress, allowlisted gateway, DLP, request-size limits"
+    severity: critical
+    verification: "No direct internet access. All outbound traffic routes through allowlisted proxy/gateway. DLP rules inspect outbound content."
+    sources:
+      - System-Hardening-Against-AI-Threats
+      - CUSTODY Operational Controls
+      - OWASP LLM02-Sensitive Info Disclosure
+
+  - id: AC-020
+    category: operational_controls
+    custody_pillar: Operational Controls
+    lasm_layer: L6 Environment
+    threat: "Lateral movement: agent accesses unrelated hosts, services, or admin interfaces"
+    control: "Micro-segmentation, workload identity, mTLS, per-service authorization, host firewall"
+    severity: critical
+    verification: "Agent workload network-segmented. mTLS required for service communication. Host firewall denies all non-allowed traffic."
+    sources:
+      - System-Hardening-Against-AI-Threats
+      - LASM L6 Environment
+      - CUSTODY Operational Controls
+
+  # ── Dependency ──────────────────────────────────────────────────
+
+  - id: AC-021
+    category: dependency
+    custody_pillar: Dependency
+    lasm_layer: L5 Integration
+    threat: "Cross-agent compromise: one agent reads another agent's memory or tokens"
+    control: "Separate identities, namespaces, storage, queues, and network policies per agent"
+    severity: high
+    verification: "Each agent class runs under separate identity with separate credentials. Storage, queues, and network policies isolated."
+    sources:
+      - CUSTODY Dependency
+      - LASM L5 Integration
+      - OWASP Agentic AI
+
+  - id: AC-022
+    category: dependency
+    custody_pillar: Dependency
+    lasm_layer: L5 Integration
+    threat: "Trust chain abuse: compromised tool or plugin performs malicious actions"
+    control: "Tool isolation, signed artifacts, schema validation, least privilege, independent logging"
+    severity: high
+    verification: "Each tool runs in isolated context with least-privilege credentials. Artifacts signed and verified. Input/output schemas validated."
+    sources:
+      - CUSTODY Dependency
+      - LASM L5 Integration
+
+  # ── Yield ──────────────────────────────────────────────────────
+
+  - id: AC-023
+    category: yield
+    custody_pillar: Yield
+    lasm_layer: L6 Environment
+    threat: "Persistence: agent modifies startup scripts, scheduled tasks, or system packages"
+    control: "Immutable images, read-only system paths, deny service creation, drift detection"
+    severity: high
+    verification: "Agent runs from immutable container image. System paths read-only. Service creation denied. Drift detection monitors for unauthorized changes."
+    sources:
+      - System-Hardening-Against-AI-Threats
+      - CUSTODY Yield
+
+  - id: AC-024
+    category: yield
+    custody_pillar: Yield
+    lasm_layer: L6 Environment
+    threat: "Compromised environment cannot be recovered"
+    control: "Ephemeral sandbox with secure teardown — destroy and recreate from trusted images"
+    severity: critical
+    verification: "Agent runtime is ephemeral. Environment destroyed and recreated from trusted image after task completion or security event."
+    sources:
+      - CUSTODY Yield
+      - System-Hardening-Against-AI-Threats
+
+  - id: AC-025
+    category: yield
+    custody_pillar: Yield
+    lasm_layer: L6 Environment
+    threat: "Credential persistence: agent credentials remain active after task completion"
+    control: "Automatic credential revocation and rotation on task completion or security event"
+    severity: critical
+    verification: "Agent credentials automatically revoked on task completion or security event. No long-lived credentials persist beyond the session."
+    sources:
+      - CUSTODY Yield
+      - System-Hardening-Against-AI-Threats

@@ -1,0 +1,91 @@
+name: Validate
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install bandit pip-audit
+
+      - name: Validate YAML checklists & mappings
+        run: |
+          python3 -c "
+          import yaml, glob, sys
+          errors = []
+          for f in sorted(glob.glob('checklists/*.yaml') + glob.glob('mappings/*.yaml')):
+              try:
+                  data = yaml.safe_load(open(f))
+                  items = data.get('checklist', data.get('mappings', []))
+                  print(f'  {f}: {len(items)} items OK')
+              except Exception as e:
+                  errors.append(f'{f}: {e}')
+          if errors:
+              for e in errors:
+                  print(f'ERROR: {e}')
+              sys.exit(1)
+          print('All YAML files valid.')
+          "
+
+      - name: Validate MCP server imports
+        run: |
+          python3 -c "
+          from cinch.loader import list_checklists, load_checklist, load_mapping, search_by_threat
+          from cinch.server import APP
+          checklists = list_checklists()
+          print(f'Loaded {len(checklists)} checklists')
+          for cl in checklists:
+              print(f'  {cl[\"name\"]}: {cl[\"item_count\"]} items')
+          print('MCP server imports OK')
+          "
+
+      - name: Validate checklist IDs are unique
+        run: |
+          python3 -c "
+          import yaml, glob
+          seen = {}
+          for f in sorted(glob.glob('checklists/*.yaml')):
+              data = yaml.safe_load(open(f))
+              for item in data.get('checklist', []):
+                  iid = item['id']
+                  if iid in seen:
+                      print(f'DUPLICATE: {iid} in {f} and {seen[iid]}')
+                  seen[iid] = f
+          print(f'{len(seen)} unique IDs across all checklists')
+          "
+
+      - name: Lint (ruff)
+        run: ruff check src tests
+
+      - name: Security scan (bandit)
+        run: bandit -r src -q
+
+      - name: Dependency audit (pip-audit)
+        run: pip-audit --strict
+
+      - name: Tests (pytest)
+        run: pytest -q
+
+      - name: Verify docs-site data bundle is in sync
+        run: |
+          python3 scripts/build_docs_json.py
+          if ! git diff --exit-code docs-site/data/full.json; then
+            echo "::error::docs-site/data/full.json is out of sync. Run 'python scripts/build_docs_json.py' and commit the result."
+            git --no-pager diff docs-site/data/full.json | head -40
+            exit 1
+          fi
