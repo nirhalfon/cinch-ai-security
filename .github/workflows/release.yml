@@ -104,7 +104,11 @@ jobs:
           name: dist
           path: dist/
 
-      - uses: pypa/gh-action-pypi-publish@a892a5a61159132606e93a2fa6f4358831b04d26 # v1.14.2
+      # Pinned by release tag, not by commit SHA: this is a Docker action, and its
+      # container image is published as ghcr.io/pypa/gh-action-pypi-publish:<tag>.
+      # A SHA ref makes the runner look for an image tagged with that SHA, which does
+      # not exist ("manifest unknown"), so the publish step fails before it starts.
+      - uses: pypa/gh-action-pypi-publish@v1.14.2
         with:
           # Trusted publishing: no username/password token needed.
           print-hash: true
