@@ -330,6 +330,7 @@ cinch/
 │   └── nanoclaw/agent-config.yaml
 ├── templates/                      # 4 review/policy/ADR templates
 ├── docs/                           # threat-model, research-references, design-rationale
+├── marketing/                      # announcement copy (kept out of docs/ — docs/ is bundled)
 ├── docs-site/                      # the console
 │   ├── index.html                  # landing page + assessment dashboard (one file)
 │   └── data/
