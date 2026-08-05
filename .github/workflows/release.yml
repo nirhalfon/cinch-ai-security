@@ -1,0 +1,50 @@
+name: Publish to PyPI
+
+# Token-less publishing via PyPI Trusted Publishing (OIDC).
+# One-time setup: on https://pypi.org/manage/project/cinch-ai-security/settings/publishing/
+# add this GitHub workflow as a trusted publisher (owner: nirhalfon, repo: cinch-ai-security,
+# workflow: release.yml, environment: pypi). No API tokens required.
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Build sdist + wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+      - name: Check metadata + README rendering
+        run: |
+          python -m pip install twine
+          twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write           # required for OIDC trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release.v1
+        with:
+          # Trusted publishing: no username/password token needed.
+          print-hash: true

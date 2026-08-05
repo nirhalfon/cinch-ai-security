@@ -9,9 +9,24 @@ from typing import Any
 
 import yaml
 
-DATA_DIR = Path(__file__).resolve().parent.parent.parent / "checklists"
-MAPPINGS_DIR = Path(__file__).resolve().parent.parent.parent / "mappings"
-PROTOCOLS_DIR = Path(__file__).resolve().parent.parent.parent / "protocols"
+# Data dirs ship inside the wheel under cinch/data/ (see pyproject force-include).
+# For source / editable installs there is no cinch/data/, so fall back to the
+# repo root. This keeps `cinch serve` working both when pip-installed and when
+# run from a checkout.
+_PKG_DIR = Path(__file__).resolve().parent
+_PKG_DATA = _PKG_DIR / "data"
+_REPO_ROOT = _PKG_DIR.parent.parent
+
+
+def _resolve_data_dir(child: str) -> Path:
+    """Prefer bundled package data (wheel); fall back to the repo checkout."""
+    bundled = _PKG_DATA / child
+    return bundled if bundled.is_dir() else _REPO_ROOT / child
+
+
+DATA_DIR = _resolve_data_dir("checklists")
+MAPPINGS_DIR = _resolve_data_dir("mappings")
+PROTOCOLS_DIR = _resolve_data_dir("protocols")
 
 # Strict allowlist for resource names. Rejects path separators, "..", drive
 # letters, whitespace, extensions, and anything that could escape a data dir.

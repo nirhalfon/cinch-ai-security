@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "cinch"
+name = "cinch-ai-security"
 version = "1.0.0"
 description = "MCP server + cross-harness skills for building and operating AI agents safely"
 readme = "README.md"
 license = "CC-BY-4.0"
 requires-python = ">=3.10"
 authors = [{name = "Cinch Contributors"}]
-keywords = ["ai", "security", "mcp", "nist", "cisa", "owasp", "agent", "harness"]
+keywords = ["ai", "security", "mcp", "nist", "cisa", "owasp", "agent", "harness", "supply-chain", "red-team", "custody", "lasm"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -29,6 +29,13 @@ dependencies = [
     "pyyaml>=6.0",
 ]
 
+[project.urls]
+Homepage = "https://nirhalfon.github.io/cinch-ai-security/"
+Repository = "https://github.com/nirhalfon/cinch-ai-security"
+Documentation = "https://nirhalfon.github.io/cinch-ai-security/"
+Issues = "https://github.com/nirhalfon/cinch-ai-security/issues"
+Changelog = "https://github.com/nirhalfon/cinch-ai-security/commits/main"
+
 [project.scripts]
 cinch = "cinch.server:main"
 
@@ -37,6 +44,13 @@ dev = ["pytest>=7.0", "ruff>=0.1"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cinch"]
+
+# Bundle the data dirs into the wheel so a pip-installed `cinch` finds its
+# checklists/mappings/protocols at runtime (loader resolves cinch/data/ first).
+[tool.hatch.build.targets.wheel.force-include]
+"checklists" = "cinch/data/checklists"
+"mappings" = "cinch/data/mappings"
+"protocols" = "cinch/data/protocols"
 
 [tool.ruff]
 line-length = 100
