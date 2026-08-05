@@ -21,6 +21,8 @@
 
 📖 **Live docs & explorers:** <https://nirhalfon.github.io/cinch-ai-security/> — browse every checklist, mapping, protocol, skill, and template; read the threat model; and try the MCP tools.
 
+🖥️ **Interactive console:** <https://nirhalfon.github.io/cinch-ai-security/console.html> — a live containment assessment dashboard and marketing site in one. Mark controls enforced, log evidence, watch the containment score and NIST/OWASP/CUSTODY/LASM coverage update in real time, and explore the LASM 7×4 attack-surface grid. AI agents can point an MCP client at the repo and query the same data the console renders.
+
 AI agents can read data, invoke tools, execute code, call APIs, and initiate business processes. When they go wrong — through prompt injection, excessive autonomy, credential theft, or model error — **the consequences are only as severe as the environment allows.** Cinch gives you the enforceable controls, protocols, and runtime queries to keep that environment contained.
 
 ## ✨ What's inside
