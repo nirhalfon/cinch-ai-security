@@ -1,0 +1,74 @@
+name: Security Scan
+# SAST + dependency review. Complements validate.yaml (which runs ruff,
+# bandit, pip-audit, pytest, and the content-integrity gate) — this workflow
+# adds only what validate.yaml does NOT cover: CodeQL SAST and a PR
+# dependency-review gate. Secret scanning, push protection, and Dependabot
+# are handled natively by GitHub (enabled at repo level).
+#
+# All third-party actions are pinned to commit SHAs; Dependabot (github-actions
+# ecosystem) opens PRs to bump them. Least-privilege permissions per job.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Monday ~04:17 UTC (deliberately off the :00/:30 mark).
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: secscan-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false   # never cancel a scheduled scan with a push
+
+jobs:
+  # CodeQL SAST. Skipped on fork PRs: the GITHUB_TOKEN is read-only there and
+  # cannot upload SARIF to code scanning, so running would only produce noise.
+  codeql:
+    name: CodeQL (python)
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      security-events: write   # upload SARIF / code-scanning results
+      actions: read            # CodeQL run metadata
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@c4dd10e44af883a891fe31ced449bcb4a6728b9b # v3
+        with:
+          languages: python
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@c4dd10e44af883a891fe31ced449bcb4a6728b9b # v3
+      - name: Analyze
+        uses: github/codeql-action/analyze@c4dd10e44af883a891fe31ced449bcb4a6728b9b # v3
+        with:
+          category: "/language:python"
+
+  # Block PRs that introduce a moderate-or-worse advisory dependency.
+  # Not wired as a required branch-protection check (sole maintainer); it
+  # surfaces as a non-blocking status so the maintainer can decide.
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Dependency review
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4
+        with:
+          fail-on-severity: moderate
+          # fail-on-scopes uses the plural key; 'development' is a valid value.
+          fail-on-scopes: development

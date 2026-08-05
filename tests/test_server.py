@@ -136,12 +136,42 @@ def test_checklist_run_rejects_traversal(bad):
 
 @pytest.mark.parametrize("bad", [
     "../../etc/passwd",
-    "agent-containment",
     "/etc/passwd",
+    "..",
+    "foo/bar",
+    "with spaces",
 ])
 def test_protocol_get_rejects_traversal(bad):
     payload = _payload(_run(APP.call_tool("protocol_get", {"name": bad})))
     assert "error" in payload
+
+
+@pytest.mark.parametrize("bad", [
+    "../../etc/passwd",
+    "agent-containment.yaml",
+    "/etc/passwd",
+    "..",
+    "with spaces",
+])
+def test_checklist_get_rejects_traversal(bad):
+    payload = _payload(_run(APP.call_tool("checklist_get", {"checklist_name": bad, "item_id": "AC-001"})))
+    assert "error" in payload
+
+
+def test_errors_do_not_leak_host_path():
+    """Not-found errors must echo only the bare validated name, never the
+    resolved absolute install path (regression guard for the path-leak fix)."""
+    for tool, arg, val in [
+        ("checklist_run", "name", "does-not-exist"),
+        ("mapping_lookup", "framework", "does-not-exist"),
+        ("protocol_get", "name", "does-not-exist"),
+    ]:
+        payload = _payload(_run(APP.call_tool(tool, {arg: val})))
+        assert "error" in payload, f"{tool} returned no error key"
+        msg = payload["error"]
+        assert "/" not in msg, f"{tool} leaked a path separator: {msg!r}"
+        assert "cinch" not in msg.lower(), f"{tool} leaked install dir: {msg!r}"
+        assert "checklists" not in msg, f"{tool} leaked data dir: {msg!r}"
 
 
 def test_threat_search_rejects_overlong():

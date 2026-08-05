@@ -11,6 +11,7 @@ import json
 import logging
 import sys
 
+import yaml
 from mcp.server.mcpserver.server import MCPServer
 
 from .loader import (
@@ -126,7 +127,7 @@ def checklist_run(name: str) -> str:
             "items": items,
         }
         return json.dumps(result, indent=2)
-    except (FileNotFoundError, ValueError, TypeError) as e:
+    except (FileNotFoundError, ValueError, TypeError, yaml.YAMLError, KeyError, AttributeError) as e:
         return _err(str(e))
 
 
@@ -160,7 +161,7 @@ def checklist_get(checklist_name: str, item_id: str) -> str:
             "lasm_layer": item.lasm_layer,
         }
         return json.dumps(result, indent=2)
-    except (FileNotFoundError, ValueError, TypeError) as e:
+    except (FileNotFoundError, ValueError, TypeError, yaml.YAMLError, KeyError, AttributeError) as e:
         return _err(str(e))
 
 
@@ -179,7 +180,7 @@ def protocol_get(name: str) -> str:
     try:
         _validate_str(name, "name")
         return load_protocol(name)
-    except (FileNotFoundError, ValueError, TypeError) as e:
+    except (FileNotFoundError, ValueError, TypeError, yaml.YAMLError, KeyError, AttributeError) as e:
         return _err(str(e))
 
 
@@ -209,7 +210,7 @@ def mapping_lookup(framework: str) -> str:
             for e in entries
         ]
         return json.dumps(result, indent=2)
-    except (FileNotFoundError, ValueError, TypeError) as e:
+    except (FileNotFoundError, ValueError, TypeError, yaml.YAMLError, KeyError, AttributeError) as e:
         return _err(str(e))
 
 
@@ -229,7 +230,7 @@ def threat_search(query: str) -> str:
         _validate_str(query, "query")
         results = search_by_threat(query)
         return json.dumps(results, indent=2)
-    except (FileNotFoundError, ValueError, TypeError) as e:
+    except (FileNotFoundError, ValueError, TypeError, yaml.YAMLError, KeyError, AttributeError) as e:
         return _err(str(e))
 
 
@@ -252,7 +253,7 @@ def checklist_diff(a: str, b: str) -> str:
         _validate_str(a, "a")
         _validate_str(b, "b")
         return json.dumps(diff_checklists(a, b), indent=2)
-    except (FileNotFoundError, ValueError, TypeError) as e:
+    except (FileNotFoundError, ValueError, TypeError, yaml.YAMLError, KeyError, AttributeError) as e:
         return _err(str(e))
 
 

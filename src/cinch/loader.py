@@ -145,14 +145,20 @@ def load_checklist(name: str) -> Checklist:
     name = _validate_name(name)
     path = _safe_path(DATA_DIR, name, ".yaml")
     if not path.exists():
-        raise FileNotFoundError(f"Checklist not found: {path}")
-    raw = _load_yaml(path)
+        raise FileNotFoundError(f"Checklist not found: {name!r}")
+    raw = _load_yaml_or_none(path)
+    if not isinstance(raw, dict):
+        raise TypeError(f"invalid checklist file: {name!r} (not a mapping or unreadable)")
     meta = raw.get("metadata", {})
+    if not isinstance(meta, dict):
+        meta = {}
     items = []
-    for item_data in raw.get("checklist", []):
+    for item_data in raw.get("checklist", []) or []:
+        if not isinstance(item_data, dict):
+            continue
         items.append(
             ChecklistItem(
-                id=item_data["id"],
+                id=item_data.get("id", ""),
                 category=item_data.get("category", ""),
                 threat=item_data.get("threat", ""),
                 control=item_data.get("control", ""),
@@ -169,8 +175,8 @@ def load_checklist(name: str) -> Checklist:
         version=meta.get("version", "0.0.0"),
         description=meta.get("description", ""),
         items=items,
-        frameworks=meta.get("frameworks", []),
-        source_repos=meta.get("source_repos", []),
+        frameworks=meta.get("frameworks", []) or [],
+        source_repos=meta.get("source_repos", []) or [],
     )
 
 
@@ -223,10 +229,14 @@ def load_mapping(name: str) -> list[MappingEntry]:
     file_stem = _MAPPING_FILES.get(name, name)
     path = _safe_path(MAPPINGS_DIR, file_stem, ".yaml")
     if not path.exists():
-        raise FileNotFoundError(f"Mapping not found: {path}")
-    raw = _load_yaml(path)
+        raise FileNotFoundError(f"Mapping not found: {file_stem!r}")
+    raw = _load_yaml_or_none(path)
+    if not isinstance(raw, dict):
+        raise TypeError(f"invalid mapping file: {file_stem!r} (not a mapping or unreadable)")
     entries = []
-    for entry_data in raw.get("mappings", []):
+    for entry_data in raw.get("mappings", []) or []:
+        if not isinstance(entry_data, dict):
+            continue
         entries.append(
             MappingEntry(
                 framework=entry_data.get("framework", ""),
@@ -244,7 +254,7 @@ def load_protocol(name: str) -> str:
     name = _validate_name(name)
     path = _safe_path(PROTOCOLS_DIR, name, ".md")
     if not path.exists():
-        raise FileNotFoundError(f"Protocol not found: {path}")
+        raise FileNotFoundError(f"Protocol not found: {name!r}")
     return path.read_text()
 
 
@@ -283,7 +293,7 @@ def search_by_threat(query: str) -> list[dict[str, Any]]:
                 results.append(
                     {
                         "checklist": path.stem,
-                        **item_data,
+                        **_item_public_dict(item_data),
                     }
                 )
     return results
@@ -351,6 +361,23 @@ def _item_to_dict(item: ChecklistItem) -> dict[str, Any]:
         "custody_pillar": item.custody_pillar,
         "lasm_layer": item.lasm_layer,
     }
+
+
+# Whitelisted fields serialized from a raw checklist item to MCP clients.
+# NEVER spread the raw item dict (``**item_data``): that would forward
+# arbitrary attacker-controlled keys from edited/malformed YAML to clients.
+_ITEM_PUBLIC_FIELDS = (
+    "id", "category", "custody_pillar", "lasm_layer", "threat", "control",
+    "severity", "verification", "sources", "weight",
+)
+
+
+def _item_public_dict(item_data: dict[str, Any]) -> dict[str, Any]:
+    """Serialize a raw checklist item dict to a whitelisted dict for JSON output."""
+    out: dict[str, Any] = {}
+    for k in _ITEM_PUBLIC_FIELDS:
+        out[k] = item_data.get(k, [] if k == "sources" else "")
+    return out
 
 
 def _item_haystack(item_data: dict[str, Any]) -> str:
