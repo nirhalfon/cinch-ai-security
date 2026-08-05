@@ -85,11 +85,14 @@ def _parent_pid(pid: int) -> int | None:
                 return int(line.split()[1])
     except (OSError, ValueError, IndexError):
         pass
-    if not shutil.which("ps"):
+    # Resolve to an absolute path: a relative argv[0] would let a writable PATH entry
+    # decide what the collector executes.
+    ps = shutil.which("ps")
+    if not ps:
         return None
     try:
         out = subprocess.run(  # nosec B603
-            ["ps", "-o", "ppid=", "-p", str(pid)],
+            [ps, "-o", "ppid=", "-p", str(pid)],
             capture_output=True,
             text=True,
             timeout=5,
@@ -146,13 +149,15 @@ def sign_bundle(bundle: dict[str, Any], sign_cmd: list[str] | None) -> dict[str,
     """
     if not sign_cmd:
         return None
-    if not shutil.which(sign_cmd[0]):
+    binary = shutil.which(sign_cmd[0])
+    if not binary:
         return {"error": f"signing command not found: {sign_cmd[0]}", "signed": False}
     payload = canonical_bytes(bundle)
     try:
-        # argv comes from the operator's --sign-cmd, never from an agent.
+        # argv comes from the operator's --sign-cmd, never from an agent, and argv[0] is
+        # resolved to an absolute path so PATH cannot redirect the signing step.
         out = subprocess.run(  # nosec B603
-            sign_cmd, input=payload, capture_output=True, timeout=30, check=False
+            [binary, *sign_cmd[1:]], input=payload, capture_output=True, timeout=30, check=False
         )
     except (OSError, subprocess.SubprocessError) as exc:
         return {"error": f"signing failed: {exc}", "signed": False}
