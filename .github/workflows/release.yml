@@ -72,12 +72,21 @@ jobs:
           /tmp/smoke/bin/pip install --quiet dist/*.whl
           /tmp/smoke/bin/cinch --help > /dev/null
           /tmp/smoke/bin/python - <<'PY'
+          import json
           from cinch.assess import load_catalog, load_rubric
           from cinch.console import console_dir
           catalog = load_catalog()
-          assert len(catalog) == 117, f"expected 117 controls in the wheel, got {len(catalog)}"
-          assert [b["grade"] for b in load_rubric()["grades"]] == ["A", "B", "C", "D", "F"]
           root = console_dir()
+          # The engine and the bundled console catalog must agree. Derive the expected
+          # count from the wheel's own data instead of hardcoding it here — a hardcoded
+          # count breaks every time the catalog grows (see the v1.2.0 release failure).
+          full = json.loads((root / "data" / "full.json").read_text())
+          expected = sum(len(cl.get("items", [])) for cl in full.get("checklists", {}).values())
+          assert expected > 0, "bundled console catalog is empty"
+          assert len(catalog) == expected, (
+              f"catalog says {len(catalog)} controls, bundled console data says {expected}"
+          )
+          assert [b["grade"] for b in load_rubric()["grades"]] == ["A", "B", "C", "D", "F"]
           for rel in ("index.html", "data/full.json", "data/rubric.json"):
               assert (root / rel).is_file(), f"missing bundled console asset: {rel}"
           print("bundled data OK:", len(catalog), "controls at", root)
