@@ -11,7 +11,16 @@ node_modules/
 
 # Environment
 .env
+.env.*
+!.env.example
 .venv/
+
+# Key material
+*.pem
+*.key
+*.p12
+id_rsa*
+*.pem.*
 
 # OS
 .DS_Store
