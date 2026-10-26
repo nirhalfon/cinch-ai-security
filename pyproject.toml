@@ -27,7 +27,7 @@ dependencies = [
     # Runtime deps: MCP SDK 2.0 (high-level MCPServer API) + YAML loader.
     # Upper bounds guard against an incompatible major release being pulled
     # silently (defense-in-depth alongside a future lockfile).
-    "mcp>=2.0.0,<3",
+    "mcp>=2.2.0,<3",  # floor raised for SDK security fixes
     "pyyaml>=6.0,<7",
 ]
 

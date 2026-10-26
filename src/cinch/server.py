@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import shlex
 import sys
 from pathlib import Path
 
@@ -516,7 +517,7 @@ def _run_collect(args: argparse.Namespace) -> int:
         authorized=args.authorized,
         allow_private=args.allow_private,
         deployment=args.deployment,
-        sign_cmd=args.sign_cmd.split() if args.sign_cmd else None,
+        sign_cmd=shlex.split(args.sign_cmd) if args.sign_cmd else None,
         request_field=args.request_field,
         response_field=args.response_field,
     )
