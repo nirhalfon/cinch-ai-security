@@ -284,6 +284,13 @@ cp -r skills/ai-harness-review ~/.hermes/skills/
 # Claude Code — drop into your project root; it auto-loads
 cp cross-harness/claude/CLAUDE.md /your/project/CLAUDE.md
 
+# Codex / OpenCode — drop into your project root; both read AGENTS.md
+cp cross-harness/codex/AGENTS.md /your/project/AGENTS.md
+cp cross-harness/opencode/AGENTS.md /your/project/AGENTS.md
+
+# Gemini CLI — GEMINI.md in your project root
+cp cross-harness/gemini/GEMINI.md /your/project/GEMINI.md
+
 # OpenClaw / NanoClaw — see cross-harness/openclaw/ and cross-harness/nanoclaw/
 ```
 
@@ -338,6 +345,9 @@ cinch/
 │   └── lasm-crosswalk.yaml
 ├── cross-harness/                  # agent platform configs
 │   ├── claude/CLAUDE.md
+│   ├── codex/AGENTS.md
+│   ├── gemini/GEMINI.md
+│   ├── opencode/AGENTS.md
 │   ├── openclaw/agent-config.yaml
 │   └── nanoclaw/agent-config.yaml
 ├── templates/                      # 4 review/policy/ADR templates
