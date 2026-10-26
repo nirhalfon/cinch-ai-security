@@ -10,6 +10,7 @@ import json
 import threading
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import pytest
 
@@ -120,6 +121,39 @@ def test_assessment_override_is_served_from_any_path(tmp_path):
 def test_missing_assessment_override_is_reported():
     with pytest.raises(FileNotFoundError, match="assessment pack not found"):
         serve_console(port=_free_port(), open_browser=False, assessment="nope.json")
+
+
+def test_console_serves_hostile_assessment_bytes_unmodified(tmp_path):
+    """The console must serve the pack verbatim — sanitization happens in the
+    browser render path (esc()), never by mutating the file."""
+    hostile = tmp_path / "pack.json"
+    hostile.write_text(json.dumps({
+        "deployment": "<script>window.__pwned=1</script>",
+        "status": {}, "evidence": {},
+        "summary": {"grade": "F", "score": 0},
+    }))
+    port = _free_port()
+    threading.Thread(
+        target=serve_console,
+        kwargs={"port": port, "open_browser": False, "assessment": hostile},
+        daemon=True,
+    ).start()
+    base = f"http://127.0.0.1:{port}"
+    for _ in range(100):
+        try:
+            resp = urllib.request.urlopen(base + "/data/assessment.json", timeout=1)
+            break
+        except (urllib.error.URLError, ConnectionError):
+            threading.Event().wait(0.05)
+    else:
+        pytest.fail("console server did not start")
+    assert resp.status == 200
+    assert resp.read() == hostile.read_bytes()
+
+
+def test_console_page_defines_escape_helper():
+    html = Path(__file__).resolve().parents[1].joinpath("docs-site", "index.html").read_text()
+    assert "function esc(" in html
 
 
 @pytest.mark.parametrize(
