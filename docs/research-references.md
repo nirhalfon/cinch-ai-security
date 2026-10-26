@@ -9,7 +9,8 @@
 | CISA Secure AI System Development | https://www.cisa.gov/topics/artificial-intelligence | Secure AI lifecycle controls |
 | OWASP Top 10 for LLM Applications | https://genai.owasp.org/ | LLM application security risks |
 | OWASP Agentic AI | https://owasp.org/www-project-ai-red-teaming-guide/ | Agent threat modeling and controls |
-| MITRE ATLAS | https://atlas.mitre.org/ | Adversarial threat landscape for AI |
+| OWASP MCP Security Cheat Sheet | https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html | MCP server security controls |
+| MITRE ATLAS | https://atlas.mitre.org/ | Adversarial threat landscape for AI; v2026.09 adds agent-specific techniques |
 | ISO/IEC 42001 | https://www.iso.org/standard/81230.html | AI management system standard |
 | ETSI SAI Series | https://www.etsi.org/committee/sai | AI cybersecurity standardization (11 standards) |
 
@@ -76,3 +77,9 @@
 - NIST AI RMF by NIST ITL AI Program
 - OWASP Top 10 for LLM Applications by OWASP
 - MITRE ATLAS by MITRE
+
+## OWASP Top 10 for Agentic AI Applications (2026)
+
+- Released 2025-12-09 by the OWASP GenAI Security Project; ASI-01..ASI-10 covers goal hijacking, tool misuse, identity abuse, supply chain, code execution, memory poisoning, inter-agent communication, cascading failures, trust exploitation and rogue agents.
+- Source: https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/
+- Cinch mapping: mappings/owasp-agentic-crosswalk.yaml

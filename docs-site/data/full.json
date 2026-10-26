@@ -1703,7 +1703,7 @@
       "title": "Cinch — Design Rationale"
     },
     "research-references": {
-      "content": "# Research References\n\n## Frameworks and Standards\n\n| Reference | URL | Coverage |\n|---|---|---|\n| NIST AI RMF 1.0 | https://www.nist.gov/itl/ai-risk-management-framework | Risk governance (GOVERN, MAP, MEASURE, MANAGE) |\n| NIST AI 600-1 (GenAI Profile) | https://www.nist.gov/artificial-intelligence | Generative AI-specific risks and controls |\n| CISA Secure AI System Development | https://www.cisa.gov/topics/artificial-intelligence | Secure AI lifecycle controls |\n| OWASP Top 10 for LLM Applications | https://genai.owasp.org/ | LLM application security risks |\n| OWASP Agentic AI | https://owasp.org/www-project-ai-red-teaming-guide/ | Agent threat modeling and controls |\n| MITRE ATLAS | https://atlas.mitre.org/ | Adversarial threat landscape for AI |\n| ISO/IEC 42001 | https://www.iso.org/standard/81230.html | AI management system standard |\n| ETSI SAI Series | https://www.etsi.org/committee/sai | AI cybersecurity standardization (11 standards) |\n\n## Agent Containment\n\n| Reference | URL | Coverage |\n|---|---|---|\n| CUSTODY Framework | https://github.com/malwarejake/CUSTODY-framework | Autonomous agent containment |\n| LASM (Layered Attack Surface Model) | https://github.com/yuval14/Artificial-Intelligence-Cyber-Shield | 7×4 threat model for agents |\n| Google Secure AI Framework | https://saif.google/ | Secure AI architecture baseline |\n| Microsoft AI Agent Security | https://learn.microsoft.com/en-us/azure/ai-foundry/ | Enterprise agent deployment |\n| Cloud Security Alliance Agentic AI | https://cloudsecurityalliance.org/ | Enterprise agent security and red teaming |\n| Pillar Security SAIL | https://www.pillar.security/ | Secure AI Lifecycle Framework |\n\n## Red Teaming\n\n| Reference | URL | Coverage |\n|---|---|---|\n| PyRIT | https://github.com/Azure/PyRIT | Automated LLM red teaming |\n| garak | https://github.com/NVIDIA/garak | LLM vulnerability scanner |\n| UK AISI Inspect | https://inspect.aisi.org.uk/ | Model evaluation framework |\n| Meta Purple Llama | https://github.com/meta-llama/PurpleLlama | Trust and safety evaluation |\n| Meta CyberSecEval | https://github.com/meta-llama/PurpleLlama/tree/main/CybersecurityBenchmarks | Cybersecurity misuse evaluation |\n| MLCommons AILuminate | https://mlcommons.org/ailuminate/ | AI risk and reliability benchmark |\n| IBM ART | https://github.com/Trusted-AI/adversarial-robustness-toolbox | Adversarial robustness testing |\n\n## Engineering Safeguards\n\n| Reference | URL | Coverage |\n|---|---|---|\n| AI Harness Scorecard | https://github.com/markmishaev76/ai-harness-scorecard | Engineering safeguards for AI-assisted dev |\n| DORA 2025 | https://dora.dev/research/2025/ | CI/CD practices, stability metrics, AI impact |\n| SlopCodeBench | https://huggingface.co/blog/slopcodebench | Subtle correctness in AI-generated code |\n| OpenAI Harness Engineering | https://openai.com/index/harness-engineering/ | Mechanical constraints for safe AI-assisted dev |\n| \"Is It Safe?\" (ICLR 2026) | https://openreview.net/forum?id=rs6rRCEixQ | Vibe-coding security benchmark |\n\n## System Hardening\n\n| Reference | URL | Coverage |\n|---|---|---|\n| SELinux | https://selinuxproject.org/ | Mandatory access control for Linux |\n| AppArmor | https://apparmor.net/ | Mandatory access control for Linux |\n| seccomp | https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html | Syscall filtering |\n| Landlock | https://landlock.io/ | Unprivileged access control for Linux |\n| systemd sandboxing | https://www.freedesktop.org/software/systemd/man/systemd.exec.html | Process isolation and capability restriction |\n| Windows Application Control | https://learn.microsoft.com/en-us/windows/security/threat-protection/windows-defender-application-control/ | Code integrity and application allowlisting |\n\n## Research Papers\n\n| Paper | Year | Key Finding |\n|---|---|---|\n| \"AI Code in the Wild\" — Yan et al. | 2025 | AI-induced vulnerabilities propagate through shared models, creating near-identical insecure templates |\n| \"Is It Safe?\" — Vibe Coding Security Benchmark | 2026 | 47.5% of AI tasks functionally correct, only 8.25% also secure |\n| \"An Empirical Evaluation of Property-Based Testing in Python\" — OOPSLA | 2025 | Each PBT finds ~50x as many mutations as average unit test |\n| AgentWatch — UC Berkeley CLTC | 2026 | Browser-based agents fail privacy and security scenarios |\n| DORA AI Capabilities Model | 2025 | AI boosts throughput at the expense of stability without robust automated testing |\n\n## Attribution\n\n- CUSTODY Framework by Jake Williams (malwarejake)\n- LASM by Kexin Chu (2026)\n- AI Harness Scorecard by Mark Mishaev\n- Artificial Intelligence Cyber Shield by Yuval Sinay\n- NIST AI RMF by NIST ITL AI Program\n- OWASP Top 10 for LLM Applications by OWASP\n- MITRE ATLAS by MITRE",
+      "content": "# Research References\n\n## Frameworks and Standards\n\n| Reference | URL | Coverage |\n|---|---|---|\n| NIST AI RMF 1.0 | https://www.nist.gov/itl/ai-risk-management-framework | Risk governance (GOVERN, MAP, MEASURE, MANAGE) |\n| NIST AI 600-1 (GenAI Profile) | https://www.nist.gov/artificial-intelligence | Generative AI-specific risks and controls |\n| CISA Secure AI System Development | https://www.cisa.gov/topics/artificial-intelligence | Secure AI lifecycle controls |\n| OWASP Top 10 for LLM Applications | https://genai.owasp.org/ | LLM application security risks |\n| OWASP Agentic AI | https://owasp.org/www-project-ai-red-teaming-guide/ | Agent threat modeling and controls |\n| OWASP MCP Security Cheat Sheet | https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html | MCP server security controls |\n| MITRE ATLAS | https://atlas.mitre.org/ | Adversarial threat landscape for AI; v2026.09 adds agent-specific techniques |\n| ISO/IEC 42001 | https://www.iso.org/standard/81230.html | AI management system standard |\n| ETSI SAI Series | https://www.etsi.org/committee/sai | AI cybersecurity standardization (11 standards) |\n\n## Agent Containment\n\n| Reference | URL | Coverage |\n|---|---|---|\n| CUSTODY Framework | https://github.com/malwarejake/CUSTODY-framework | Autonomous agent containment |\n| LASM (Layered Attack Surface Model) | https://github.com/yuval14/Artificial-Intelligence-Cyber-Shield | 7×4 threat model for agents |\n| Google Secure AI Framework | https://saif.google/ | Secure AI architecture baseline |\n| Microsoft AI Agent Security | https://learn.microsoft.com/en-us/azure/ai-foundry/ | Enterprise agent deployment |\n| Cloud Security Alliance Agentic AI | https://cloudsecurityalliance.org/ | Enterprise agent security and red teaming |\n| Pillar Security SAIL | https://www.pillar.security/ | Secure AI Lifecycle Framework |\n\n## Red Teaming\n\n| Reference | URL | Coverage |\n|---|---|---|\n| PyRIT | https://github.com/Azure/PyRIT | Automated LLM red teaming |\n| garak | https://github.com/NVIDIA/garak | LLM vulnerability scanner |\n| UK AISI Inspect | https://inspect.aisi.org.uk/ | Model evaluation framework |\n| Meta Purple Llama | https://github.com/meta-llama/PurpleLlama | Trust and safety evaluation |\n| Meta CyberSecEval | https://github.com/meta-llama/PurpleLlama/tree/main/CybersecurityBenchmarks | Cybersecurity misuse evaluation |\n| MLCommons AILuminate | https://mlcommons.org/ailuminate/ | AI risk and reliability benchmark |\n| IBM ART | https://github.com/Trusted-AI/adversarial-robustness-toolbox | Adversarial robustness testing |\n\n## Engineering Safeguards\n\n| Reference | URL | Coverage |\n|---|---|---|\n| AI Harness Scorecard | https://github.com/markmishaev76/ai-harness-scorecard | Engineering safeguards for AI-assisted dev |\n| DORA 2025 | https://dora.dev/research/2025/ | CI/CD practices, stability metrics, AI impact |\n| SlopCodeBench | https://huggingface.co/blog/slopcodebench | Subtle correctness in AI-generated code |\n| OpenAI Harness Engineering | https://openai.com/index/harness-engineering/ | Mechanical constraints for safe AI-assisted dev |\n| \"Is It Safe?\" (ICLR 2026) | https://openreview.net/forum?id=rs6rRCEixQ | Vibe-coding security benchmark |\n\n## System Hardening\n\n| Reference | URL | Coverage |\n|---|---|---|\n| SELinux | https://selinuxproject.org/ | Mandatory access control for Linux |\n| AppArmor | https://apparmor.net/ | Mandatory access control for Linux |\n| seccomp | https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html | Syscall filtering |\n| Landlock | https://landlock.io/ | Unprivileged access control for Linux |\n| systemd sandboxing | https://www.freedesktop.org/software/systemd/man/systemd.exec.html | Process isolation and capability restriction |\n| Windows Application Control | https://learn.microsoft.com/en-us/windows/security/threat-protection/windows-defender-application-control/ | Code integrity and application allowlisting |\n\n## Research Papers\n\n| Paper | Year | Key Finding |\n|---|---|---|\n| \"AI Code in the Wild\" — Yan et al. | 2025 | AI-induced vulnerabilities propagate through shared models, creating near-identical insecure templates |\n| \"Is It Safe?\" — Vibe Coding Security Benchmark | 2026 | 47.5% of AI tasks functionally correct, only 8.25% also secure |\n| \"An Empirical Evaluation of Property-Based Testing in Python\" — OOPSLA | 2025 | Each PBT finds ~50x as many mutations as average unit test |\n| AgentWatch — UC Berkeley CLTC | 2026 | Browser-based agents fail privacy and security scenarios |\n| DORA AI Capabilities Model | 2025 | AI boosts throughput at the expense of stability without robust automated testing |\n\n## Attribution\n\n- CUSTODY Framework by Jake Williams (malwarejake)\n- LASM by Kexin Chu (2026)\n- AI Harness Scorecard by Mark Mishaev\n- Artificial Intelligence Cyber Shield by Yuval Sinay\n- NIST AI RMF by NIST ITL AI Program\n- OWASP Top 10 for LLM Applications by OWASP\n- MITRE ATLAS by MITRE\n\n## OWASP Top 10 for Agentic AI Applications (2026)\n\n- Released 2025-12-09 by the OWASP GenAI Security Project; ASI-01..ASI-10 covers goal hijacking, tool misuse, identity abuse, supply chain, code execution, memory poisoning, inter-agent communication, cascading failures, trust exploitation and rogue agents.\n- Source: https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/\n- Cinch mapping: mappings/owasp-agentic-crosswalk.yaml",
       "title": "Research References"
     },
     "threat-model": {
@@ -2260,6 +2260,155 @@
       "meta": {
         "description": "Maps NIST AI Risk Management Framework (AI RMF 1.0) functions and subcategories to Cinch checklist items. Also includes AI 600-1 GenAI Profile mappings.\n",
         "name": "NIST AI RMF Crosswalk",
+        "version": "1.0.0"
+      }
+    },
+    "owasp-agentic-crosswalk": {
+      "entries": [
+        {
+          "checklist_ids": [
+            "AC-005",
+            "AC-006",
+            "AC-012",
+            "RT-001",
+            "RT-002",
+            "RT-003",
+            "RT-004"
+          ],
+          "control_id": "ASI-01",
+          "description": "Instruction hierarchy, data-instruction separation and explicit goal/stop conditions defeat prompt-injection goal hijacking",
+          "framework": "OWASP Agentic AI",
+          "framework_control_name": "Agent Goal Hijack"
+        },
+        {
+          "checklist_ids": [
+            "AC-003",
+            "AC-011",
+            "AC-022",
+            "RT-005",
+            "RT-006",
+            "RT-007"
+          ],
+          "control_id": "ASI-02",
+          "description": "Tool allowlists, infrastructure-level approval and tool isolation stop agents invoking tools beyond intent",
+          "framework": "OWASP Agentic AI",
+          "framework_control_name": "Tool Misuse"
+        },
+        {
+          "checklist_ids": [
+            "AC-016",
+            "AC-018",
+            "AC-025",
+            "AE-001",
+            "AE-002",
+            "RT-013",
+            "RT-014",
+            "RT-015",
+            "RT-016"
+          ],
+          "control_id": "ASI-03",
+          "description": "Non-root execution, short-lived scoped credentials and per-resource authorization block identity and privilege abuse",
+          "framework": "OWASP Agentic AI",
+          "framework_control_name": "Identity & Privilege Abuse"
+        },
+        {
+          "checklist_ids": [
+            "AC-007",
+            "SC-001",
+            "SC-002",
+            "SC-003",
+            "SC-004",
+            "SC-005",
+            "SC-014",
+            "SC-015"
+          ],
+          "control_id": "ASI-04",
+          "description": "SBOMs, pinned hashed dependencies, model checksums and provenance verification cover the agentic supply chain",
+          "framework": "OWASP Agentic AI",
+          "framework_control_name": "Agentic Supply Chain"
+        },
+        {
+          "checklist_ids": [
+            "AC-018",
+            "AC-023",
+            "AC-024",
+            "AE-004",
+            "AE-010",
+            "HE-003"
+          ],
+          "control_id": "ASI-05",
+          "description": "Privilege boundaries, seccomp, read-only roots and ephemeral sandboxes contain unintended code execution",
+          "framework": "OWASP Agentic AI",
+          "framework_control_name": "Unexpected Code Execution"
+        },
+        {
+          "checklist_ids": [
+            "AC-008",
+            "AC-021",
+            "RT-012"
+          ],
+          "control_id": "ASI-06",
+          "description": "Memory validation, per-agent storage separation and cross-session isolation resist memory and context poisoning",
+          "framework": "OWASP Agentic AI",
+          "framework_control_name": "Memory & Context Poisoning"
+        },
+        {
+          "checklist_ids": [
+            "AC-014",
+            "AC-021",
+            "AC-022"
+          ],
+          "control_id": "ASI-07",
+          "description": "Delegation logging, separate agent identities and signed tool artifacts secure inter-agent communication",
+          "framework": "OWASP Agentic AI",
+          "framework_control_name": "Insecure Inter-Agent Communication"
+        },
+        {
+          "checklist_ids": [
+            "AC-017",
+            "HE-014",
+            "HE-016",
+            "RT-017",
+            "RT-018"
+          ],
+          "control_id": "ASI-08",
+          "description": "Rate limits, timeouts, budgets and graceful degradation stop one failure from cascading",
+          "framework": "OWASP Agentic AI",
+          "framework_control_name": "Cascading Failures"
+        },
+        {
+          "checklist_ids": [
+            "AC-009",
+            "AC-010",
+            "RT-004",
+            "RT-009"
+          ],
+          "control_id": "ASI-09",
+          "description": "Human approval gates, single-operator scope and leakage red-teaming resist trust exploitation",
+          "framework": "OWASP Agentic AI",
+          "framework_control_name": "Human-Agent Trust Exploitation"
+        },
+        {
+          "checklist_ids": [
+            "AC-001",
+            "AC-002",
+            "AC-013",
+            "AC-015",
+            "AC-024",
+            "AC-025"
+          ],
+          "control_id": "ASI-10",
+          "description": "Authorization artifacts, immutable audit trails, separation of duties and credential revocation catch rogue agents",
+          "framework": "OWASP Agentic AI",
+          "framework_control_name": "Rogue Agents"
+        }
+      ],
+      "meta": {
+        "description": "Maps the OWASP Top 10 for Agentic Applications (ASI-01..ASI-10) to Cinch checklist items. Source: https://genai.owasp.org/resource/ owasp-top-10-for-agentic-applications-for-2026/\n",
+        "name": "OWASP Agentic AI Top 10 Crosswalk",
+        "sources": [
+          "https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/"
+        ],
         "version": "1.0.0"
       }
     },

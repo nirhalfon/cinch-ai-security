@@ -25,11 +25,11 @@
 
 <br/>
 
-| 117 | 6 | 9 | 5 | 5 | 4 | 3 |
+| 117 | 6 | 9 | 6 | 5 | 4 | 3 |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **controls** | **checklists** | **MCP tools** | **crosswalks** | **protocols** | **templates** | **skills** |
 
-**Grounded in** NIST AI RMF · CISA Secure AI Development · OWASP LLM & Agentic · MITRE ATLAS · CUSTODY · LASM · Google SAIF · DORA 2025
+**Grounded in** NIST AI RMF · CISA Secure AI Development · OWASP LLM & Agentic · OWASP Agentic AI Top 10 · MITRE ATLAS · CUSTODY · LASM · Google SAIF · DORA 2025
 
 </div>
 
@@ -47,7 +47,7 @@ AI agents can read data, invoke tools, execute code, call APIs, and initiate bus
 | 🖥️ | **Assessment console** | Grade a deployment, get insights + a phased action plan, export JSON/CSV/PDF |
 | 🧠 | **3 skills** | Drop-in Hermes skill definitions for security reviews & red-teaming |
 | 📐 | **5 protocols** | Step-by-step deployment, incident-response, and evidence collection |
-| 🔗 | **5 mappings** | Crosswalks: NIST AI RMF · OWASP LLM · MITRE ATLAS · CUSTODY · LASM |
+| 🔗 | **6 mappings** | Crosswalks: NIST AI RMF · OWASP LLM · OWASP Agentic · MITRE ATLAS · CUSTODY · LASM |
 | 📄 | **4 templates** | Security review, risk assessment, agent policy, deployment ADR |
 
 ---
@@ -251,7 +251,7 @@ Your tools (all return JSON):
 | `checklist_list` | List the 6 checklists and their item counts |
 | `checklist_get` | Get a specific control by ID (`AC-001`, `AE-005`, …) |
 | `protocol_get` | Get a step-by-step protocol by name (`agent-deployment`, `evidence-collect`, …) |
-| `mapping_lookup` | Look up controls mapped to a framework (`nist-rmf`, `owasp-llm`, `atlas`, `custody`, `lasm`) |
+| `mapping_lookup` | Look up controls mapped to a framework (`nist-rmf`, `owasp-llm`, `owasp-agentic`, `atlas`, `custody`, `lasm`) |
 | `threat_search` | Find every control that mitigates a given threat — scans threat + control + verification + sources |
 | `checklist_diff` | Compare two checklists to surface coverage gaps and duplicated controls |
 
@@ -329,9 +329,10 @@ cinch/
 │   ├── ai-harness-review/SKILL.md
 │   ├── agent-audit/SKILL.md        # + separation-of-duties / --self-audit rule
 │   └── ai-red-team/SKILL.md
-├── mappings/                       # 5 framework crosswalks
+├── mappings/                       # 6 framework crosswalks
 │   ├── nist-rmf-crosswalk.yaml
 │   ├── owasp-llm-crosswalk.yaml
+│   ├── owasp-agentic-crosswalk.yaml
 │   ├── atlas-crosswalk.yaml
 │   ├── custody-crosswalk.yaml
 │   └── lasm-crosswalk.yaml
