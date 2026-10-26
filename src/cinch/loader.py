@@ -43,6 +43,7 @@ _MAPPING_FILES = {
     "custody": "custody-crosswalk",
     "lasm": "lasm-crosswalk",
     "nist-rmf": "nist-rmf-crosswalk",
+    "owasp-agentic": "owasp-agentic-crosswalk",
     "owasp-llm": "owasp-llm-crosswalk",
 }
 

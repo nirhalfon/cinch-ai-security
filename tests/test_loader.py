@@ -163,3 +163,20 @@ def test_search_by_threat_rejects_overlong():
 def test_search_by_threat_rejects_non_string():
     with pytest.raises((ValueError, TypeError)):
         search_by_threat(None)  # type: ignore[arg-type]
+
+
+# ── OWASP Agentic mapping integrity ──
+
+def test_owasp_agentic_mapping_loads_and_references_real_controls():
+    entries = load_mapping("owasp-agentic")
+    ids = {e.control_id for e in entries}
+    assert ids == {f"ASI-{n:02d}" for n in range(1, 11)}
+    for e in entries:
+        for cid in e.checklist_ids:
+            # every mapped id must exist in some checklist (no typos)
+            found = any(
+                get_checklist_item(name, cid) is not None
+                for name in ("agent-containment", "agent-environment", "harness-engineering",
+                             "red-team", "supply-chain", "system-hardening")
+            )
+            assert found, f"{e.control_id} maps to unknown control {cid}"

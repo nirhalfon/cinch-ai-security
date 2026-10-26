@@ -202,8 +202,8 @@ def mapping_lookup(framework: str) -> str:
     cross-reference between NIST AI RMF, OWASP, CUSTODY, LASM, and MITRE ATLAS.
 
     Args:
-        framework: Framework name: 'nist-rmf', 'owasp-llm', 'atlas', 'custody',
-            or 'lasm'.
+        framework: Framework name: 'nist-rmf', 'owasp-llm', 'owasp-agentic',
+            'atlas', 'custody', or 'lasm'.
     """
     _setup_logging()
     _log_call("mapping_lookup", {"framework": framework})

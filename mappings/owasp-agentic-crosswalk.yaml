@@ -1,0 +1,73 @@
+# OWASP Top 10 for Agentic AI Applications (2026) Crosswalk
+# Maps ASI-01..ASI-10 (genai.owasp.org, released 2025-12-09) to Cinch checklist items.
+
+metadata:
+  name: OWASP Agentic AI Top 10 Crosswalk
+  version: "1.0.0"
+  description: >
+    Maps the OWASP Top 10 for Agentic Applications (ASI-01..ASI-10) to Cinch
+    checklist items. Source: https://genai.owasp.org/resource/
+    owasp-top-10-for-agentic-applications-for-2026/
+  sources:
+    - https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/
+
+mappings:
+  - framework: OWASP Agentic AI
+    control_id: ASI-01
+    framework_control_name: "Agent Goal Hijack"
+    checklist_ids: [AC-005, AC-006, AC-012, RT-001, RT-002, RT-003, RT-004]
+    description: "Instruction hierarchy, data-instruction separation and explicit goal/stop conditions defeat prompt-injection goal hijacking"
+
+  - framework: OWASP Agentic AI
+    control_id: ASI-02
+    framework_control_name: "Tool Misuse"
+    checklist_ids: [AC-003, AC-011, AC-022, RT-005, RT-006, RT-007]
+    description: "Tool allowlists, infrastructure-level approval and tool isolation stop agents invoking tools beyond intent"
+
+  - framework: OWASP Agentic AI
+    control_id: ASI-03
+    framework_control_name: "Identity & Privilege Abuse"
+    checklist_ids: [AC-016, AC-018, AC-025, AE-001, AE-002, RT-013, RT-014, RT-015, RT-016]
+    description: "Non-root execution, short-lived scoped credentials and per-resource authorization block identity and privilege abuse"
+
+  - framework: OWASP Agentic AI
+    control_id: ASI-04
+    framework_control_name: "Agentic Supply Chain"
+    checklist_ids: [AC-007, SC-001, SC-002, SC-003, SC-004, SC-005, SC-014, SC-015]
+    description: "SBOMs, pinned hashed dependencies, model checksums and provenance verification cover the agentic supply chain"
+
+  - framework: OWASP Agentic AI
+    control_id: ASI-05
+    framework_control_name: "Unexpected Code Execution"
+    checklist_ids: [AC-018, AC-023, AC-024, AE-004, AE-010, HE-003]
+    description: "Privilege boundaries, seccomp, read-only roots and ephemeral sandboxes contain unintended code execution"
+
+  - framework: OWASP Agentic AI
+    control_id: ASI-06
+    framework_control_name: "Memory & Context Poisoning"
+    checklist_ids: [AC-008, AC-021, RT-012]
+    description: "Memory validation, per-agent storage separation and cross-session isolation resist memory and context poisoning"
+
+  - framework: OWASP Agentic AI
+    control_id: ASI-07
+    framework_control_name: "Insecure Inter-Agent Communication"
+    checklist_ids: [AC-014, AC-021, AC-022]
+    description: "Delegation logging, separate agent identities and signed tool artifacts secure inter-agent communication"
+
+  - framework: OWASP Agentic AI
+    control_id: ASI-08
+    framework_control_name: "Cascading Failures"
+    checklist_ids: [AC-017, HE-014, HE-016, RT-017, RT-018]
+    description: "Rate limits, timeouts, budgets and graceful degradation stop one failure from cascading"
+
+  - framework: OWASP Agentic AI
+    control_id: ASI-09
+    framework_control_name: "Human-Agent Trust Exploitation"
+    checklist_ids: [AC-009, AC-010, RT-004, RT-009]
+    description: "Human approval gates, single-operator scope and leakage red-teaming resist trust exploitation"
+
+  - framework: OWASP Agentic AI
+    control_id: ASI-10
+    framework_control_name: "Rogue Agents"
+    checklist_ids: [AC-001, AC-002, AC-013, AC-015, AC-024, AC-025]
+    description: "Authorization artifacts, immutable audit trails, separation of duties and credential revocation catch rogue agents"
