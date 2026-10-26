@@ -17,7 +17,7 @@ import pytest
 from cinch.console import _free_port, console_dir, serve_console
 from cinch.server import build_parser, main
 
-EXPECTED_CONTROLS = 117
+EXPECTED_CONTROLS = 121
 EXPECTED_CHECKLISTS = 6
 
 

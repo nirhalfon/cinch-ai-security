@@ -5,11 +5,11 @@
   "summary": {
     "score": 91,
     "reviewed": 94,
-    "total": 117,
-    "applicable": 114,
+    "total": 121,
+    "applicable": 118,
     "not_applicable": 3,
-    "unreviewed": 20,
-    "completeness": 82,
+    "unreviewed": 24,
+    "completeness": 80,
     "enforced": 85,
     "gaps": 9,
     "critical_gaps": 2,
@@ -39,11 +39,11 @@
       },
       {
         "name": "harness-engineering",
-        "total": 25,
+        "total": 29,
         "enforced": 23,
         "gaps": 2,
         "reviewed": 25,
-        "ratio": 92
+        "ratio": 79
       },
       {
         "name": "red-team",
@@ -73,11 +73,11 @@
     "custody": [
       {
         "name": "Conditions of Release",
-        "total": 4,
+        "total": 5,
         "enforced": 4,
         "gaps": 0,
         "reviewed": 4,
-        "ratio": 100
+        "ratio": 80
       },
       {
         "name": "Dependency",
@@ -89,19 +89,19 @@
       },
       {
         "name": "Operational Controls",
-        "total": 13,
+        "total": 14,
         "enforced": 12,
         "gaps": 0,
         "reviewed": 12,
-        "ratio": 92
+        "ratio": 86
       },
       {
         "name": "Supervision",
-        "total": 4,
+        "total": 5,
         "enforced": 4,
         "gaps": 0,
         "reviewed": 4,
-        "ratio": 100
+        "ratio": 80
       },
       {
         "name": "Traceability",
@@ -113,11 +113,11 @@
       },
       {
         "name": "Untrusted Input",
-        "total": 4,
+        "total": 5,
         "enforced": 2,
         "gaps": 2,
         "reviewed": 4,
-        "ratio": 50
+        "ratio": 40
       },
       {
         "name": "Yield",
@@ -163,11 +163,11 @@
       },
       {
         "name": "L4",
-        "total": 5,
+        "total": 8,
         "enforced": 4,
         "gaps": 1,
         "reviewed": 5,
-        "ratio": 80
+        "ratio": 50
       },
       {
         "name": "L5",
@@ -187,11 +187,11 @@
       },
       {
         "name": "L7",
-        "total": 6,
+        "total": 7,
         "enforced": 6,
         "gaps": 0,
         "reviewed": 6,
-        "ratio": 100
+        "ratio": 86
       },
       {
         "name": "unmapped",
@@ -211,7 +211,7 @@
     },
     {
       "severity": "high",
-      "title": "Weakest CUSTODY pillar: Untrusted Input (2/4 enforced)",
+      "title": "Weakest CUSTODY pillar: Untrusted Input (2/5 enforced)",
       "detail": "2 gaps concentrate in this pillar. Capability accretion is pillar-shaped: an agent that is contained everywhere else still inherits authority through the weak one."
     },
     {
@@ -416,10 +416,10 @@
     {
       "phase": "complete-the-assessment",
       "window": "before sign-off",
-      "goal": "Review the remaining 20 applicable controls.",
+      "goal": "Review the remaining 24 applicable controls.",
       "exit_criterion": "Completeness at 100%; every control enforced, a gap, or explicitly not applicable.",
       "control_ids": [],
-      "count": 20
+      "count": 24
     }
   ],
   "unknown_control_ids": [],
@@ -849,6 +849,34 @@
       "checklist": "harness-engineering",
       "severity": "medium",
       "status": "pass",
+      "evidence": ""
+    },
+    {
+      "id": "HE-026",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-027",
+      "checklist": "harness-engineering",
+      "severity": "critical",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-028",
+      "checklist": "harness-engineering",
+      "severity": "high",
+      "status": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "id": "HE-029",
+      "checklist": "harness-engineering",
+      "severity": "critical",
+      "status": "unreviewed",
       "evidence": ""
     },
     {

@@ -2,7 +2,7 @@
 
 ``cinch console`` serves the single-page console (``docs-site/index.html`` plus
 the generated ``data/full.json`` catalog bundle) from localhost so the dashboard
-can ``fetch()`` the real 117-control catalog. Opening the HTML file directly via
+can ``fetch()`` the real 121-control catalog. Opening the HTML file directly via
 ``file://`` makes that fetch fail and silently drops the page onto its small
 offline fallback, which is why a server is needed at all.
 

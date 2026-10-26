@@ -37,7 +37,7 @@ def build(status, evidence=None, **kw):
 
 
 def test_catalog_matches_the_published_checklists():
-    assert len(CATALOG) == 117
+    assert len(CATALOG) == 121
     assert len({c["checklist"] for c in CATALOG}) == 6
     assert all(c["id"] and c["control"] and c["verification"] for c in CATALOG)
 
@@ -71,14 +71,14 @@ def test_unreviewed_controls_do_not_dilute_the_score_but_hit_completeness():
 def test_na_controls_leave_the_applicable_denominator():
     a = build({c["id"]: "na" for c in CATALOG})
     assert a["summary"]["applicable"] == 0
-    assert a["summary"]["not_applicable"] == 117
+    assert a["summary"]["not_applicable"] == 121
     assert a["summary"]["score"] == 0
 
 
 def test_low_completeness_caps_the_grade_out_of_letters():
     """Three answered controls must not grade an unknown deployment an A.
 
-    Found by running the probes against a live Claude Code harness: 3 of 117 controls
+    Found by running the probes against a live Claude Code harness: 3 of 121 controls
     resolved, all passing, and the pack came back "A (Contained)".
     """
     crit = BY_SEV["critical"][0]
@@ -178,7 +178,7 @@ def test_action_plan_phases_group_by_severity_and_carry_exit_criteria():
     assert plan["now"]["control_ids"] == [BY_SEV["critical"][0]]
     assert plan["next"]["control_ids"] == [BY_SEV["high"][0]]
     assert all(plan[p]["exit_criterion"] for p in ("now", "next", "later"))
-    assert plan["complete-the-assessment"]["count"] == 115
+    assert plan["complete-the-assessment"]["count"] == 119
 
 
 def test_no_completion_phase_once_everything_is_answered():
@@ -191,7 +191,7 @@ def test_no_completion_phase_once_everything_is_answered():
 
 def test_results_cover_every_control_with_a_status():
     a = build({BY_SEV["critical"][0]: "pass"})
-    assert len(a["results"]) == 117
+    assert len(a["results"]) == 121
     assert {r["status"] for r in a["results"]} == {"pass", "unreviewed"}
 
 

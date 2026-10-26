@@ -25,7 +25,7 @@
 
 <br/>
 
-| 117 | 6 | 9 | 6 | 5 | 4 | 3 |
+| 121 | 6 | 9 | 6 | 5 | 4 | 3 |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **controls** | **checklists** | **MCP tools** | **crosswalks** | **protocols** | **templates** | **skills** |
 
@@ -41,7 +41,7 @@ AI agents can read data, invoke tools, execute code, call APIs, and initiate bus
 
 | | What | Why it matters |
 |---|---|---|
-| 📋 | **6 checklists** (117 controls) | Enforceable, framework-mapped YAML — not advice, controls |
+| 📋 | **6 checklists** (121 controls) | Enforceable, framework-mapped YAML — not advice, controls |
 | 🔎 | **Probes** (host · project · behaviour) | Assess a **running** agent: inspect its process, its deployment, and how it behaves under attack |
 | 📡 | **MCP server** (9 tools) | Any MCP-compatible agent queries controls at runtime — and can collect + verify evidence |
 | 🖥️ | **Assessment console** | Grade a deployment, get insights + a phased action plan, export JSON/CSV/PDF |
@@ -63,7 +63,7 @@ One page, two modes: a landing page for the project, and a live containment asse
 | **Overview** | Grade, containment score, top insights, "do now" queue, open-gap feed, per-checklist counts |
 | **Insights & plan** | Grade + why it was capped, ranked findings, one recommendation per gap (do this → verify like this), remediation phased Now / Next / Later with exit criteria |
 | **Assessment** | Walk the checklist control by control, attach evidence as you go |
-| **Control library** | All 117 controls across 6 checklists — searchable, filterable, assessable inline |
+| **Control library** | All 121 controls across 6 checklists — searchable, filterable, assessable inline |
 | **Threat model** | LASM 7×4 attack-surface grid derived live from the catalog's layer mapping |
 | **Framework coverage** | NIST AI RMF, OWASP, CUSTODY, ATLAS, LASM crosswalks against your answers |
 | **Export** | JSON (full result pack for CI gating and diffs), CSV (gap register with phase + rank), PDF (grade, insights, action plan, recommendations, crosswalk) |
@@ -99,7 +99,7 @@ A state file is just what a reviewer decided (see [`examples/assessment-state.js
 
 ## 🔎 Assess a running agent
 
-Nobody wants to hand-answer 117 controls. `cinch collect` observes the deployment and answers what it can prove, in the agent's own environment.
+Nobody wants to hand-answer 121 controls. `cinch collect` observes the deployment and answers what it can prove, in the agent's own environment.
 
 ```bash
 # 1. probe the agent — out of band, as an operator/sidecar/CI identity
@@ -172,7 +172,7 @@ Exports round-trip: an exported pack feeds straight back into `cinch assess --st
 | under **60%** completeness | grade capped at **C** — a high score describes a sample, not the deployment |
 | under **25%** completeness | grade **I · Insufficient evidence** — no letter is claimed at all |
 
-That last one exists because of a real failure: probing a live Claude Code harness resolved 3 of 117 controls, all passing, and the first version graded it **A (Contained)**. A score computed over three controls says nothing about the other 114. Coverage is part of the verdict, not a footnote.
+That last one exists because of a real failure: probing a live Claude Code harness resolved 3 of 121 controls, all passing, and the first version graded it **A (Contained)**. A score computed over three controls says nothing about the other 118. Coverage is part of the verdict, not a footnote.
 
 ### Serve it yourself
 
@@ -319,7 +319,7 @@ cinch/
 │   ├── assess.py                   # assessment engine: score, grade, insights, recommendations, plan
 │   ├── console.py                  # localhost static server for the assessment console
 │   └── loader.py                   # YAML checklist/protocol/mapping loader (path-traversal-safe)
-├── checklists/                     # 6 checklists · 117 controls
+├── checklists/                     # 6 checklists · 121 controls
 │   ├── agent-containment.yaml      # CUSTODY-based agent containment (AC)
 │   ├── agent-environment.yaml      # host/container controls, out-of-band audited (AE)
 │   ├── harness-engineering.yaml    # AI dev harness safeguards (HE)

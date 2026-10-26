@@ -90,7 +90,7 @@ def _grade_for(
     Two kinds of cap, both necessary. A critical gap caps the grade because one
     unenforced critical control defeats a good average. Low completeness caps it
     because a score computed over a handful of answered controls describes the
-    sample, not the deployment — without this, three passing controls out of 117
+    sample, not the deployment — without this, three passing controls out of 121
     grade an unknown environment an A.
     """
     band = next((b for b in rubric["grades"] if score >= b["min"]), rubric["grades"][-1])
