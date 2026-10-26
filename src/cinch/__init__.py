@@ -1,3 +1,3 @@
 """Cinch — MCP server + cross-harness skills for building and operating AI agents safely."""
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"
