@@ -5,7 +5,7 @@
 metadata:
   id: harness-engineering
   name: Harness Engineering Checklist
-  version: 1.0.0
+  version: 1.1.0
   description: 'Validates AI harness design, configuration, and operational safety. Covers architecture,
     prompt engineering, tool boundaries, runtime controls, and observability.
 
@@ -313,4 +313,51 @@ checklist:
     sources:
     - NIST SP 800-53 — AU-6 Audit Review and Analysis
     - NIST SP 800-53 — CA-2 Security Assessments
+
+  - id: HE-026
+    category: mcp_security
+    custody_pillar: Operational Controls
+    lasm_layer: L4 Tool Execution
+    threat: "MCP server exposure: agent tools served on a network without authorization"
+    control: "Every MCP server is reachable only from where it is needed — stdio for local tooling, or an authenticated transport (OAuth 2.1 per the MCP authorization spec) when exposed over a network"
+    severity: high
+    verification: "Each MCP server config names a local command (stdio) or an authenticated remote endpoint. No MCP server binds to 0.0.0.0 without an authorization layer. Tool: cinch checklist_get(harness-engineering, HE-026)."
+    sources:
+    - OWASP MCP Security Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html)
+    - MCP Security Best Practices (https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices)
+
+  - id: HE-027
+    category: mcp_security
+    custody_pillar: Conditions of Release
+    lasm_layer: L4 Tool Execution
+    threat: "Confused deputy: a compromised agent invokes MCP tools the server never authorized for this caller"
+    control: "Tool-call authorization is enforced server-side — each call is checked against the caller's granted tool set at request time, never trusted from the client"
+    severity: critical
+    verification: "The MCP server (or its gateway) evaluates every tool call against an authorization policy; a revoked or never-granted tool is refused even if the client sends it. Test: call a denied tool, expect refusal."
+    sources:
+    - OWASP MCP Security Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html)
+    - MCP Authorization spec (https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/authorization)
+
+  - id: HE-028
+    category: mcp_security
+    custody_pillar: Untrusted Input
+    lasm_layer: L4 Tool Execution
+    threat: "Tool poisoning: adversarial content smuggled through tool arguments or tool results"
+    control: "MCP tool arguments are validated against the tool schema at the boundary, and tool results are treated as untrusted data — rendered, never executed, and never concatenated into privileged context"
+    severity: high
+    verification: "Schema validation rejects malformed tool arguments; tool-result content cannot reach the system/developer context or trigger code execution. Cinch itself demonstrates this: loader whitelists fields, logs argument lengths not values."
+    sources:
+    - OWASP MCP Security Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html)
+
+  - id: HE-029
+    category: mcp_security
+    custody_pillar: Supervision
+    lasm_layer: L7 Governance
+    threat: "High-impact action without human approval: an agent-driven MCP tool performs destructive or externally visible actions"
+    control: "Sensitive MCP tools (write, delete, external messaging, payment) require human approval enforced by the harness or gateway — not by a prompt"
+    severity: critical
+    verification: "The tool allowlist marks sensitive tools and the approval gate is enforced in infrastructure (harness hook, gateway policy, or human-in-the-loop queue). Test: invoke a sensitive tool without approval, expect it to be held."
+    sources:
+    - OWASP MCP Security Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html)
+    - MCP Security Best Practices (https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices)
 
