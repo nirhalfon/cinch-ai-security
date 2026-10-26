@@ -201,3 +201,21 @@ def test_package_versions_agree_everywhere():
     )
     assert cinch.__version__ == pyproject["project"]["version"]
     assert APP_VERSION == cinch.__version__
+
+
+def test_collect_cli_passes_allow_private_flag(monkeypatch):
+    captured = {}
+
+    def fake_collect(**kwargs):
+        captured.update(kwargs)
+        return {"counts": {"pass": 0, "fail": 0, "unknown": 0, "controls": 0},
+                "provenance": {"self_attested": False, "reasons": []}}
+
+    monkeypatch.setattr("cinch.server.collect_evidence", fake_collect)
+    from cinch.server import build_parser, _run_collect
+
+    args = build_parser().parse_args(
+        ["collect", "--project", ".", "--allow-private", "--deployment", "d"]
+    )
+    assert _run_collect(args) == 0
+    assert captured["allow_private"] is True

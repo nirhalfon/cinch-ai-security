@@ -275,6 +275,7 @@ def evidence_collect(
     project_path: str = "",
     endpoint: str = "",
     authorized: bool = False,
+    allow_private: bool = False,
     deployment: str = "unnamed-deployment",
 ) -> str:
     """Probe a running agent deployment and return an evidence bundle.
@@ -301,13 +302,14 @@ def evidence_collect(
             injection, prompt leakage, tool enumeration, rate bounds).
         authorized: Must be true to probe `endpoint`. Confirms you are permitted to
             send adversarial input to that target.
+        allow_private: Must be true to probe an endpoint on a private/loopback address.
         deployment: Name recorded in the bundle.
     """
     _setup_logging()
     _log_call(
         "evidence_collect",
         {"host": host, "pid": pid, "unit": unit, "project_path": project_path,
-         "endpoint": endpoint, "authorized": authorized},
+         "endpoint": endpoint, "authorized": authorized, "allow_private": allow_private},
     )
     kinds = []
     if host or pid or unit:
@@ -329,6 +331,7 @@ def evidence_collect(
             project_path=Path(project_path) if project_path else None,
             endpoint=endpoint or None,
             authorized=authorized,
+            allow_private=allow_private,
             deployment=deployment,
             via_mcp=True,  # the requester is an agent — never claimed as independent
         )
@@ -449,6 +452,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="confirm you are permitted to send adversarial input to --endpoint (required)",
     )
+    collect_cmd.add_argument(
+        "--allow-private",
+        action="store_true",
+        help="permit behavioural probes against private/loopback endpoints (local testing)",
+    )
     collect_cmd.add_argument("--request-field", default="input", help="request JSON field")
     collect_cmd.add_argument("--response-field", default="output", help="response JSON field")
     collect_cmd.add_argument("--deployment", default="unnamed-deployment", help="deployment name")
@@ -506,6 +514,7 @@ def _run_collect(args: argparse.Namespace) -> int:
         project_path=args.project,
         endpoint=args.endpoint,
         authorized=args.authorized,
+        allow_private=args.allow_private,
         deployment=args.deployment,
         sign_cmd=args.sign_cmd.split() if args.sign_cmd else None,
         request_field=args.request_field,

@@ -193,6 +193,7 @@ def collect(
     sign_cmd: list[str] | None = None,
     request_field: str = "input",
     response_field: str = "output",
+    allow_private: bool = False,
 ) -> dict[str, Any]:
     """Run the requested probe families and return an evidence bundle."""
     unsupported = [k for k in kinds if k not in KINDS]
@@ -223,6 +224,7 @@ def collect(
             authorized=authorized,
             request_field=request_field,
             response_field=response_field,
+            allow_private=allow_private,
         )
         observations += obs
         targets.append(target)
