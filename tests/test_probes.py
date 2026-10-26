@@ -84,6 +84,23 @@ def test_resolve_pid_falls_back_to_the_collector_and_says_so():
     assert "collector process" in how
 
 
+def test_host_inspection_commands_run_the_resolved_binary(monkeypatch):
+    """argv[0] must be executed as the absolute path which() returned, never
+    re-resolved through PATH at exec time."""
+    calls = []
+
+    def fake_run(argv, **kwargs):
+        calls.append(argv)
+        import subprocess as sp
+        return sp.CompletedProcess(argv, 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(host_probes.shutil, "which", lambda name: f"/usr/bin/{name}")
+    monkeypatch.setattr(host_probes.subprocess, "run", fake_run)
+    out = host_probes._run(["nft", "list", "ruleset"])
+    assert out == "ok"
+    assert calls and calls[0][0] == "/usr/bin/nft"
+
+
 def test_a_raising_probe_degrades_to_unknown(monkeypatch):
     """One broken probe must not take the collector down or fake a result."""
 

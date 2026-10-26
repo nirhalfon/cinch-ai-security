@@ -59,12 +59,15 @@ def _read(path: Path) -> str | None:
 
 def _run(argv: list[str], timeout: float = 4.0) -> str | None:
     """Run a fixed-argv inspection command. No shell, no user-supplied words."""
-    if not shutil.which(argv[0]):
+    binary = shutil.which(argv[0])
+    if not binary:
         return None
     try:
-        # argv is a literal list in this module, never agent-supplied.
+        # argv[0] is resolved to an absolute path and executed as-is, so PATH
+        # cannot redirect the inspection command (same fix as collect.py's
+        # sign/ps helpers — see 622211c).
         out = subprocess.run(  # nosec B603
-            argv,
+            [binary, *argv[1:]],
             capture_output=True,
             text=True,
             timeout=timeout,
