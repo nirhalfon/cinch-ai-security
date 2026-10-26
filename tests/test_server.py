@@ -5,6 +5,7 @@ Exercises the real MCPServer dispatch path (APP.call_tool / APP.list_tools).
 
 import asyncio
 import json
+from pathlib import Path
 
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
@@ -186,3 +187,17 @@ def test_unknown_tool_raises():
     # An unknown tool name is a protocol error, raised as ToolError.
     with pytest.raises(ToolError):
         _run(APP.call_tool("does_not_exist", {}))
+
+
+def test_package_versions_agree_everywhere():
+    """pyproject, cinch.__version__, and the MCP server identity must not drift."""
+    import tomllib
+
+    import cinch
+    from cinch.server import APP_VERSION
+
+    pyproject = tomllib.loads(
+        Path(__file__).resolve().parents[1].joinpath("pyproject.toml").read_text()
+    )
+    assert cinch.__version__ == pyproject["project"]["version"]
+    assert APP_VERSION == cinch.__version__

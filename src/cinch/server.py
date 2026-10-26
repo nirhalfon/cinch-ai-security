@@ -31,9 +31,13 @@ from .loader import (
 from .probes.behaviour import NotAuthorized
 from .verify import verify_bundle, verify_file
 
+from . import __version__
+
+APP_VERSION: str = __version__  # single source of truth: src/cinch/__init__.py
+
 APP = MCPServer(
     name="cinch",
-    version="1.1.1",
+    version=APP_VERSION,
     description=(
         "MCP server + cross-harness skills for building and operating AI agents "
         "safely. Provides security checklists, protocols, and framework mappings "
