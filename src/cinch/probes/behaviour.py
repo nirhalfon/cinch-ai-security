@@ -39,7 +39,7 @@ MAX_RECORDED_CHARS = 600
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     """Refuse every redirect: the target must be exactly the reviewed URL."""
 
-    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: A003
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None  # signals "do not follow"; urlopen raises HTTPError with the 3xx code
 
 

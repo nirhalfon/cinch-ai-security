@@ -293,12 +293,12 @@ class _RedirectingEndpoint:
 
     def __init__(self):
         class H(BaseHTTPRequestHandler):
-            def do_POST(self):  # noqa: N802
+            def do_POST(self):
                 self.send_response(302)
                 self.send_header("Location", "http://169.254.169.254/")
                 self.end_headers()
 
-            def log_message(self, *_):  # noqa: A003
+            def log_message(self, *_):
                 pass
 
         self.server = HTTPServer(("127.0.0.1", 0), H)

@@ -17,6 +17,7 @@ from pathlib import Path
 import yaml
 from mcp.server.mcpserver.server import MCPServer
 
+from . import __version__
 from .assess import build_assessment, format_report, read_state
 from .collect import collect as collect_evidence
 from .console import DEFAULT_HOST, DEFAULT_PORT, serve_console
@@ -31,8 +32,6 @@ from .loader import (
 )
 from .probes.behaviour import NotAuthorized
 from .verify import verify_bundle, verify_file
-
-from . import __version__
 
 APP_VERSION: str = __version__  # single source of truth: src/cinch/__init__.py
 

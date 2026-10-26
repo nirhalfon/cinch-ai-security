@@ -212,7 +212,7 @@ def test_collect_cli_passes_allow_private_flag(monkeypatch):
                 "provenance": {"self_attested": False, "reasons": []}}
 
     monkeypatch.setattr("cinch.server.collect_evidence", fake_collect)
-    from cinch.server import build_parser, _run_collect
+    from cinch.server import _run_collect, build_parser
 
     args = build_parser().parse_args(
         ["collect", "--project", ".", "--allow-private", "--deployment", "d"]
@@ -230,7 +230,7 @@ def test_sign_cmd_parses_quoted_arguments(monkeypatch):
                 "provenance": {"self_attested": False, "reasons": []}}
 
     monkeypatch.setattr("cinch.server.collect_evidence", fake_collect)
-    from cinch.server import build_parser, _run_collect
+    from cinch.server import _run_collect, build_parser
 
     args = build_parser().parse_args(
         ["collect", "--project", ".", "--sign-cmd", 'ssh-keygen -Y sign -f "my key" -n cinch']
