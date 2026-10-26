@@ -271,6 +271,24 @@ def agent_server():
         s.shutdown()
 
 
+class _RedirectingEndpoint:
+    """One-shot server that 302s every request to the cloud metadata IP."""
+
+    def __init__(self):
+        class H(BaseHTTPRequestHandler):
+            def do_POST(self):  # noqa: N802
+                self.send_response(302)
+                self.send_header("Location", "http://169.254.169.254/")
+                self.end_headers()
+
+            def log_message(self, *_):  # noqa: A003
+                pass
+
+        self.server = HTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.url = f"http://127.0.0.1:{self.server.server_port}/"
+
+
 def test_behavioural_probing_refuses_without_authorization():
     with pytest.raises(bh.NotAuthorized, match="refused by default"):
         bh.collect("http://127.0.0.1:1/", authorized=False)
@@ -281,9 +299,30 @@ def test_behavioural_probing_rejects_a_non_http_endpoint():
         bh.collect("file:///etc/passwd", authorized=True)
 
 
+def test_behavioural_probing_refuses_a_metadata_endpoint():
+    with pytest.raises(ValueError, match="metadata"):
+        bh.collect("http://169.254.169.254/latest/meta-data/", authorized=True)
+
+
+def test_behavioural_probing_refuses_private_endpoints_without_opt_in():
+    with pytest.raises(ValueError, match="private"):
+        bh.collect("http://127.0.0.1:9/", authorized=True)
+
+
+def test_endpoint_redirects_are_refused():
+    """A redirect could point at an internal target the URL check never saw."""
+    redirector = _RedirectingEndpoint()
+    try:
+        ep = bh.Endpoint(redirector.url, allow_private=True)
+        reply, err = ep.ask("hello")
+        assert reply is None and "HTTP 302" in err
+    finally:
+        redirector.server.shutdown()
+
+
 def test_contained_agent_passes_the_injection_probes(agent_server):
     url = agent_server("contained")
-    obs = by_control(bh.collect(url, authorized=True)[0])
+    obs = by_control(bh.collect(url, authorized=True, allow_private=True)[0])
     assert obs["RT-001"].status == PASS
     assert obs["AC-005"].status == PASS
     assert obs["RT-002"].status == PASS
@@ -293,7 +332,7 @@ def test_contained_agent_passes_the_injection_probes(agent_server):
 
 def test_injectable_agent_fails_direct_and_indirect_injection(agent_server):
     url = agent_server("compromised")
-    obs = by_control(bh.collect(url, authorized=True)[0])
+    obs = by_control(bh.collect(url, authorized=True, allow_private=True)[0])
     assert obs["RT-001"].status == FAIL
     assert obs["AC-005"].status == FAIL
     assert obs["RT-002"].status == FAIL
@@ -303,25 +342,25 @@ def test_injectable_agent_fails_direct_and_indirect_injection(agent_server):
 
 def test_prompt_leakage_is_detected(agent_server):
     url = agent_server("leaky")
-    obs = by_control(bh.collect(url, authorized=True)[0])
+    obs = by_control(bh.collect(url, authorized=True, allow_private=True)[0])
     assert obs["RT-009"].status == FAIL
 
 
 def test_throttling_agent_shows_a_rate_limit(agent_server):
     url = agent_server("throttling")
-    obs = by_control(bh.collect(url, authorized=True)[0])
+    obs = by_control(bh.collect(url, authorized=True, allow_private=True)[0])
     assert obs["RT-008"].status == PASS
     assert obs["AC-017"].status == PASS
 
 
 def test_unreachable_endpoint_is_unknown_not_fail():
-    obs = by_control(bh.collect("http://127.0.0.1:9/", authorized=True)[0])
+    obs = by_control(bh.collect("http://127.0.0.1:9/", authorized=True, allow_private=True)[0])
     assert all(o.status == UNKNOWN for o in obs.values())
 
 
 def test_tool_enumeration_is_informational_only(agent_server):
     """Enumerating tools is not itself a breach — it must never auto-fail a control."""
-    obs = by_control(bh.collect(agent_server("contained"), authorized=True)[0])
+    obs = by_control(bh.collect(agent_server("contained"), authorized=True, allow_private=True)[0])
     assert obs["RT-005"].status == UNKNOWN
 
 

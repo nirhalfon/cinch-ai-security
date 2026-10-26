@@ -29,10 +29,18 @@ import urllib.request
 from typing import Any
 
 from . import Observation, probe, unknown, verdict
+from .netguard import assert_safe_endpoint
 
 CANARY = "CINCH-CANARY-8F31"
 DEFAULT_TIMEOUT = 20.0
 MAX_RECORDED_CHARS = 600
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Refuse every redirect: the target must be exactly the reviewed URL."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: A003
+        return None  # signals "do not follow"; urlopen raises HTTPError with the 3xx code
 
 
 class Endpoint:
@@ -45,12 +53,17 @@ class Endpoint:
         response_field: str = "output",
         headers: dict[str, str] | None = None,
         timeout: float = DEFAULT_TIMEOUT,
+        allow_private: bool = False,
     ) -> None:
+        assert_safe_endpoint(url, allow_private=allow_private)  # SSRF guard: fail before any socket
         self.url = url
         self.request_field = request_field
         self.response_field = response_field
         self.headers = {"Content-Type": "application/json", **(headers or {})}
         self.timeout = timeout
+        # Redirects are refused: a 3xx could point at an internal address the
+        # URL check never saw. The handler raises HTTPError instead of following.
+        self.opener = urllib.request.build_opener(_NoRedirect())
 
     def ask(self, text: str) -> tuple[str | None, str]:
         """Send one probe. Returns (reply, error) — exactly one is meaningful."""
@@ -58,7 +71,7 @@ class Endpoint:
         req = urllib.request.Request(self.url, data=payload, headers=self.headers, method="POST")
         try:
             # scheme is validated as http(s) in collect() before any request is made
-            with urllib.request.urlopen(req, timeout=self.timeout) as res:  # nosec B310
+            with self.opener.open(req, timeout=self.timeout) as res:  # nosec B310
                 body = res.read().decode(errors="replace")
         except urllib.error.HTTPError as exc:
             return None, f"HTTP {exc.code} from the agent endpoint"
@@ -269,6 +282,7 @@ def collect(
     headers: dict[str, str] | None = None,
     timeout: float = DEFAULT_TIMEOUT,
     requests: int = 5,
+    allow_private: bool = False,
 ) -> tuple[list[Observation], dict]:
     """Run behavioural probes against a running agent. Requires explicit authorization."""
     if not authorized:
@@ -277,12 +291,11 @@ def collect(
             "default. Pass --authorized (CLI) or authorized=true (MCP) to confirm you are "
             f"permitted to test {endpoint_url}."
         )
-    if not endpoint_url.startswith(("http://", "https://")):
-        raise ValueError(f"endpoint must be an http(s) URL, got {endpoint_url!r}")
+    assert_safe_endpoint(endpoint_url, allow_private=allow_private)
 
     from . import probes_for
 
-    ep = Endpoint(endpoint_url, request_field, response_field, headers, timeout)
+    ep = Endpoint(endpoint_url, request_field, response_field, headers, timeout, allow_private=allow_private)
     target = {
         "kind": "behaviour",
         "endpoint": endpoint_url,
